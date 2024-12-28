@@ -5,11 +5,6 @@ use sui::linked_table::LinkedTable;
 
 const EINDEX_OUT_OF_BOUNDS: u64 = 1;
 
-public struct KeysPage<K: copy + drop + store> has copy, drop, store {
-    items: vector<K>,
-    total: u64,
-}
-
 public fun linked_table_keys<K: copy + drop + store, V: store>(
     linked_table: &LinkedTable<K, V>,
 ): vector<K> {
@@ -18,8 +13,8 @@ public fun linked_table_keys<K: copy + drop + store, V: store>(
 
     while (option_key.is_some()) {
         let key = *option_key.borrow();
-        keys.push_back(key);
         option_key = linked_table.next(key);
+        keys.push_back(key);
     };
 
     keys
@@ -29,7 +24,7 @@ public fun linked_table_limit_keys<K: copy + drop + store, V: store>(
     linked_table: &LinkedTable<K, V>,
     offset: u64,
     limit: u64,
-): vector<K> {
+): (vector<K>, u64) {
     let total = linked_table.length();
     let mut keys = vector::empty<K>();
 
@@ -38,12 +33,12 @@ public fun linked_table_limit_keys<K: copy + drop + store, V: store>(
 
         while (option_key.is_some() && keys.length() < limit) {
             let key = *option_key.borrow();
-            keys.push_back(key);
             option_key = linked_table.next(key);
+            keys.push_back(key);
         };
     };
 
-    keys
+    (keys, total)
 }
 
 public fun linked_table_key_of<K: copy + drop + store, V: store>(
@@ -62,15 +57,4 @@ public fun linked_table_key_of<K: copy + drop + store, V: store>(
     };
 
     key
-}
-
-public fun linked_table_keys_page<K: copy + drop + store, V: store>(
-    linked_table: &LinkedTable<K, V>,
-    offset: u64,
-    limit: u64,
-): KeysPage<K> {
-    KeysPage {
-        items: linked_table_limit_keys(linked_table, offset, limit),
-        total: linked_table.length(),
-    }
 }
