@@ -2,7 +2,7 @@
 module terminal::admin_portfolio;
 
 use std::ascii::String;
-use sui::balance::Balance;
+use sui::coin::{Self, Coin};
 use terminal::config::AdminCap;
 use terminal::portfolio::{Self, Portfolio};
 
@@ -11,10 +11,10 @@ public fun deposit<T>(
     portfolio: &mut Portfolio,
     owner: address,
     account_name: String,
-    balance: Balance<T>,
+    coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio::deposit<T>(portfolio, owner, account_name, balance, ctx);
+    portfolio::deposit<T>(portfolio, owner, account_name, coin::into_balance(coin), ctx);
 }
 
 public fun deposit_fee<T>(
@@ -22,10 +22,10 @@ public fun deposit_fee<T>(
     portfolio: &mut Portfolio,
     owner: address,
     account_name: String,
-    balance: Balance<T>,
+    coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio::deposit_fee<T>(portfolio, owner, account_name, balance, ctx);
+    portfolio::deposit_fee<T>(portfolio, owner, account_name, coin::into_balance(coin), ctx);
 }
 
 public fun deposit_reward<T>(
@@ -33,40 +33,28 @@ public fun deposit_reward<T>(
     portfolio: &mut Portfolio,
     owner: address,
     account_name: String,
-    balance: Balance<T>,
+    coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio::deposit_reward<T>(portfolio, owner, account_name, balance, ctx);
+    portfolio::deposit_reward<T>(portfolio, owner, account_name, coin::into_balance(coin), ctx);
 }
 
-public fun withdraw<T>(
+public fun apply_fee<T>(
     _adminCap: &AdminCap,
     portfolio: &mut Portfolio,
     owner: address,
     account_name: String,
-    amount: Option<u64>,
-): Balance<T> {
-    portfolio::withdraw<T>(portfolio, owner, account_name, amount)
+) {
+    portfolio::apply_fee<T>(portfolio, owner, account_name);
 }
 
-public fun withdraw_fee<T>(
+public fun apply_reward<T>(
     _adminCap: &AdminCap,
     portfolio: &mut Portfolio,
     owner: address,
     account_name: String,
-    amount: Option<u64>,
-): Balance<T> {
-    portfolio::withdraw_fee<T>(portfolio, owner, account_name, amount)
-}
-
-public fun withdraw_reward<T>(
-    _adminCap: &AdminCap,
-    portfolio: &mut Portfolio,
-    owner: address,
-    account_name: String,
-    amount: Option<u64>,
-): Balance<T> {
-    portfolio::withdraw_reward<T>(portfolio, owner, account_name, amount)
+) {
+    portfolio::apply_reward<T>(portfolio, owner, account_name);
 }
 
 public fun claim<T>(

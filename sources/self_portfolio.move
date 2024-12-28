@@ -2,16 +2,24 @@
 module terminal::self_portfolio;
 
 use std::ascii::String;
-use sui::balance::Balance;
+use sui::coin::{Self, Coin};
 use terminal::portfolio::{Self, Portfolio};
 
 public fun deposit<T>(
     portfolio: &mut Portfolio,
     account_name: String,
-    balance: Balance<T>,
+    coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio::deposit<T>(portfolio, ctx.sender(), account_name, balance, ctx);
+    portfolio::deposit<T>(portfolio, ctx.sender(), account_name, coin::into_balance(coin), ctx);
+}
+
+public fun apply_fee<T>(portfolio: &mut Portfolio, account_name: String, ctx: &mut TxContext) {
+    portfolio::apply_fee<T>(portfolio, ctx.sender(), account_name);
+}
+
+public fun apply_reward<T>(portfolio: &mut Portfolio, account_name: String, ctx: &mut TxContext) {
+    portfolio::apply_reward<T>(portfolio, ctx.sender(), account_name);
 }
 
 public fun claim<T>(portfolio: &mut Portfolio, account_name: String, ctx: &mut TxContext) {
