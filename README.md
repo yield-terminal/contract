@@ -1,1 +1,1 @@
-# contract
+# Yield Terminal Smart Contract
