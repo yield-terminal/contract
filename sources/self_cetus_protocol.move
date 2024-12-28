@@ -215,3 +215,32 @@ public fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
         ctx,
     );
 }
+
+public fun swap<CoinTypeA, CoinTypeB>(
+    config: &GlobalConfig,
+    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    portfolio: &mut Portfolio,
+    account_name: String,
+    a2b: bool,
+    by_amount_in: bool,
+    amount: u64,
+    sqrt_price_limit: u128,
+    swap_result: bool,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    cetus_protocol::swap<CoinTypeA, CoinTypeB>(
+        config,
+        pool,
+        portfolio,
+        ctx.sender(),
+        account_name,
+        a2b,
+        by_amount_in,
+        amount,
+        sqrt_price_limit,
+        swap_result,
+        clock,
+        ctx,
+    );
+}
