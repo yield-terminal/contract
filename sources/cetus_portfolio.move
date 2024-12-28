@@ -23,7 +23,7 @@ fun init(ctx: &mut TxContext) {
     });
 }
 
-fun check_owner(portfolio: &mut CetusPortfolio, owner: address, ctx: &mut TxContext) {
+fun add_owner_if_not_exist(portfolio: &mut CetusPortfolio, owner: address, ctx: &mut TxContext) {
     if (!linked_table::contains(&portfolio.positions, owner)) {
         linked_table::push_back(
             &mut portfolio.positions,
@@ -33,7 +33,7 @@ fun check_owner(portfolio: &mut CetusPortfolio, owner: address, ctx: &mut TxCont
     }
 }
 
-fun check_account_name(
+fun add_account_if_not_exist(
     own_positions: &mut LinkedTable<String, LinkedTable<ID, Position>>,
     account_name: String,
     ctx: &mut TxContext,
@@ -50,9 +50,9 @@ public(package) fun deposit_position(
     position: Position,
     ctx: &mut TxContext,
 ) {
-    check_owner(portfolio, owner, ctx);
+    add_owner_if_not_exist(portfolio, owner, ctx);
     let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
-    check_account_name(own_positions, account_name, ctx);
+    add_account_if_not_exist(own_positions, account_name, ctx);
     let account_positions = linked_table::borrow_mut(own_positions, account_name);
     let id = object::id(&position);
     linked_table::push_back(account_positions, id, position);

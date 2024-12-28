@@ -24,7 +24,7 @@ fun init(ctx: &mut TxContext) {
     });
 }
 
-fun check_owner(portfolio: &mut Portfolio, owner: address, ctx: &mut TxContext) {
+fun add_owner_if_not_exist(portfolio: &mut Portfolio, owner: address, ctx: &mut TxContext) {
     if (!linked_table::contains(&portfolio.wallets, owner)) {
         linked_table::push_back(
             &mut portfolio.wallets,
@@ -34,7 +34,7 @@ fun check_owner(portfolio: &mut Portfolio, owner: address, ctx: &mut TxContext) 
     }
 }
 
-fun check_account_name(
+fun add_account_if_not_exist(
     own_wallets: &mut LinkedTable<String, Wallet>,
     account_name: String,
     ctx: &mut TxContext,
@@ -51,9 +51,9 @@ public(package) fun deposit<T>(
     balance: Balance<T>,
     ctx: &mut TxContext,
 ) {
-    check_owner(portfolio, owner, ctx);
+    add_owner_if_not_exist(portfolio, owner, ctx);
     let own_wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
-    check_account_name(own_wallets, account_name, ctx);
+    add_account_if_not_exist(own_wallets, account_name, ctx);
     wallet::deposit(linked_table::borrow_mut(own_wallets, account_name), balance);
 }
 
@@ -64,9 +64,9 @@ public(package) fun deposit_fee<T>(
     balance: Balance<T>,
     ctx: &mut TxContext,
 ) {
-    check_owner(portfolio, owner, ctx);
+    add_owner_if_not_exist(portfolio, owner, ctx);
     let own_wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
-    check_account_name(own_wallets, account_name, ctx);
+    add_account_if_not_exist(own_wallets, account_name, ctx);
     wallet::deposit_fee(linked_table::borrow_mut(own_wallets, account_name), balance);
 }
 
@@ -77,9 +77,9 @@ public(package) fun deposit_reward<T>(
     balance: Balance<T>,
     ctx: &mut TxContext,
 ) {
-    check_owner(portfolio, owner, ctx);
+    add_owner_if_not_exist(portfolio, owner, ctx);
     let own_wallets = linked_table::borrow_mut(&mut portfolio.wallets, ctx.sender());
-    check_account_name(own_wallets, account_name, ctx);
+    add_account_if_not_exist(own_wallets, account_name, ctx);
     wallet::deposit_reward(linked_table::borrow_mut(own_wallets, account_name), balance);
 }
 
