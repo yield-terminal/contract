@@ -6,23 +6,75 @@ use cetus_clmm::pool::{Self, Pool, AddLiquidityReceipt};
 use cetus_clmm::position;
 use cetus_clmm::rewarder::RewarderGlobalVault;
 use std::ascii::String;
+use std::type_name::{Self, TypeName};
 use sui::balance;
 use sui::clock::Clock;
+use sui::event;
 use terminal::cetus_portfolio::{Self, CetusPortfolio};
 use terminal::portfolio::{Self, Portfolio};
 
-public struct SwapResult has copy, drop, store {
+public struct SwapEvent has copy, drop, store {
+    owner: address,
+    account_name: String,
+    pool: ID,
+    a2b: bool,
     amount_in: u64,
     amount_out: u64,
+    fee_amount: u64,
+    before_sqrt_price: u128,
+    after_sqrt_price: u128,
 }
 
-public struct AmountResult has copy, drop, store {
+public struct CollectRewardEvent has copy, drop, store {
+    owner: address,
+    account_name: String,
+    pool: ID,
+    position: ID,
+    coin_type: TypeName,
+    amount: u64,
+}
+
+public struct CollectFeeEvent has copy, drop, store {
+    owner: address,
+    account_name: String,
+    pool: ID,
+    position: ID,
     amount_a: u64,
     amount_b: u64,
 }
 
-public struct OpenPositionResult has copy, drop, store {
-    pos_id: ID,
+public struct RemoveLiquidityEvent has copy, drop, store {
+    owner: address,
+    account_name: String,
+    pool: ID,
+    position: ID,
+    amount_a: u64,
+    amount_b: u64,
+}
+
+public struct ClosePositionEvent has copy, drop, store {
+    owner: address,
+    account_name: String,
+    pool: ID,
+    position: ID,
+    amount_a: u64,
+    amount_b: u64,
+}
+
+public struct OpenPositionEvent has copy, drop, store {
+    owner: address,
+    account_name: String,
+    pool: ID,
+    position: ID,
+    amount_a: u64,
+    amount_b: u64,
+}
+
+public struct AddLiquidityEvent has copy, drop, store {
+    owner: address,
+    account_name: String,
+    pool: ID,
+    position: ID,
     amount_a: u64,
     amount_b: u64,
 }
@@ -34,7 +86,7 @@ fun repay_add_liquidity<CoinTypeA, CoinTypeB>(
     owner: address,
     account_name: String,
     receipt: AddLiquidityReceipt<CoinTypeA, CoinTypeB>,
-): AmountResult {
+): (u64, u64) {
     let (amount_a, amount_b) = pool::add_liquidity_pay_amount(&receipt);
     let balance_a = portfolio::withdraw<CoinTypeA>(
         portfolio,
@@ -49,7 +101,8 @@ fun repay_add_liquidity<CoinTypeA, CoinTypeB>(
         option::some(amount_b),
     );
     pool::repay_add_liquidity(config, pool, balance_a, balance_b, receipt);
-    AmountResult { amount_a, amount_b }
+
+    (amount_a, amount_b)
 }
 
 public(package) fun add_liquidity<CoinTypeA, CoinTypeB>(
@@ -62,7 +115,7 @@ public(package) fun add_liquidity<CoinTypeA, CoinTypeB>(
     position_id: ID,
     liquidity: u128,
     clock: &Clock,
-): AmountResult {
+) {
     let position = cetus_portfolio::borrow_position_mut(
         cetus_portfolio,
         owner,
@@ -76,7 +129,23 @@ public(package) fun add_liquidity<CoinTypeA, CoinTypeB>(
         liquidity,
         clock,
     );
-    repay_add_liquidity(config, pool, portfolio, owner, account_name, receipt)
+    let (amount_a, amount_b) = repay_add_liquidity(
+        config,
+        pool,
+        portfolio,
+        owner,
+        account_name,
+        receipt,
+    );
+
+    event::emit(AddLiquidityEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        amount_a,
+        amount_b,
+    });
 }
 
 public(package) fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
@@ -90,7 +159,7 @@ public(package) fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
     amount: u64,
     fix_amount_a: bool,
     clock: &Clock,
-): AmountResult {
+) {
     let position = cetus_portfolio::borrow_position_mut(
         cetus_portfolio,
         owner,
@@ -105,7 +174,23 @@ public(package) fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
         fix_amount_a,
         clock,
     );
-    repay_add_liquidity(config, pool, portfolio, owner, account_name, receipt)
+    let (amount_a, amount_b) = repay_add_liquidity(
+        config,
+        pool,
+        portfolio,
+        owner,
+        account_name,
+        receipt,
+    );
+
+    event::emit(AddLiquidityEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        amount_a,
+        amount_b,
+    });
 }
 
 public(package) fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
@@ -120,7 +205,7 @@ public(package) fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
     liquidity: u128,
     clock: &Clock,
     ctx: &mut TxContext,
-): OpenPositionResult {
+) {
     let mut position = pool::open_position(
         config,
         pool,
@@ -135,11 +220,25 @@ public(package) fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
         liquidity,
         clock,
     );
-    let amount_result = repay_add_liquidity(config, pool, portfolio, owner, account_name, receipt);
-    let pos_id = object::id(&position);
-    let AmountResult { amount_a, amount_b } = amount_result;
+    let (amount_a, amount_b) = repay_add_liquidity(
+        config,
+        pool,
+        portfolio,
+        owner,
+        account_name,
+        receipt,
+    );
+    let position_id = object::id(&position);
     cetus_portfolio::deposit_position(cetus_portfolio, owner, account_name, position, ctx);
-    OpenPositionResult { pos_id, amount_a, amount_b }
+
+    event::emit(OpenPositionEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        amount_a,
+        amount_b,
+    });
 }
 
 public(package) fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
@@ -155,7 +254,7 @@ public(package) fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
     fix_amount_a: bool,
     clock: &Clock,
     ctx: &mut TxContext,
-): OpenPositionResult {
+) {
     let mut position = pool::open_position(
         config,
         pool,
@@ -171,11 +270,25 @@ public(package) fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
         fix_amount_a,
         clock,
     );
-    let amount_result = repay_add_liquidity(config, pool, portfolio, owner, account_name, receipt);
-    let pos_id = object::id(&position);
-    let AmountResult { amount_a, amount_b } = amount_result;
+    let (amount_a, amount_b) = repay_add_liquidity(
+        config,
+        pool,
+        portfolio,
+        owner,
+        account_name,
+        receipt,
+    );
+    let position_id = object::id(&position);
     cetus_portfolio::deposit_position(cetus_portfolio, owner, account_name, position, ctx);
-    OpenPositionResult { pos_id, amount_a, amount_b }
+
+    event::emit(OpenPositionEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        amount_a,
+        amount_b,
+    });
 }
 
 public(package) fun close_position<CoinTypeA, CoinTypeB>(
@@ -188,7 +301,7 @@ public(package) fun close_position<CoinTypeA, CoinTypeB>(
     position_id: ID,
     clock: &Clock,
     ctx: &mut TxContext,
-): AmountResult {
+) {
     let mut position = cetus_portfolio::withdraw_position(
         cetus_portfolio,
         owner,
@@ -212,7 +325,15 @@ public(package) fun close_position<CoinTypeA, CoinTypeB>(
         portfolio::deposit<CoinTypeB>(portfolio, owner, account_name, balance_b, ctx);
     };
     pool::close_position<CoinTypeA, CoinTypeB>(config, pool, position);
-    AmountResult { amount_a, amount_b }
+
+    event::emit(ClosePositionEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        amount_a,
+        amount_b,
+    });
 }
 
 public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
@@ -226,7 +347,7 @@ public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
     liquidity: u128,
     clock: &Clock,
     ctx: &mut TxContext,
-): AmountResult {
+) {
     let position = cetus_portfolio::borrow_position_mut(
         cetus_portfolio,
         owner,
@@ -244,7 +365,15 @@ public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
     let amount_b = balance_b.value();
     portfolio::deposit<CoinTypeA>(portfolio, owner, account_name, balance_a, ctx);
     portfolio::deposit<CoinTypeB>(portfolio, owner, account_name, balance_b, ctx);
-    AmountResult { amount_a, amount_b }
+
+    event::emit(RemoveLiquidityEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        amount_a,
+        amount_b,
+    });
 }
 
 public(package) fun collect_fee<CoinTypeA, CoinTypeB>(
@@ -257,7 +386,7 @@ public(package) fun collect_fee<CoinTypeA, CoinTypeB>(
     position_id: ID,
     recalculate: bool,
     ctx: &mut TxContext,
-): AmountResult {
+) {
     let position = cetus_portfolio::borrow_position(
         cetus_portfolio,
         owner,
@@ -274,7 +403,15 @@ public(package) fun collect_fee<CoinTypeA, CoinTypeB>(
     let amount_b = fee_b.value();
     portfolio::deposit_fee<CoinTypeA>(portfolio, owner, account_name, fee_a, ctx);
     portfolio::deposit_fee<CoinTypeB>(portfolio, owner, account_name, fee_b, ctx);
-    AmountResult { amount_a, amount_b }
+
+    event::emit(CollectFeeEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        amount_a,
+        amount_b,
+    });
 }
 
 public(package) fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
@@ -289,7 +426,7 @@ public(package) fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
     recalculate: bool,
     clock: &Clock,
     ctx: &mut TxContext,
-): u64 {
+) {
     let position = cetus_portfolio::borrow_position(
         cetus_portfolio,
         owner,
@@ -306,7 +443,15 @@ public(package) fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
     );
     let amount = reward_balance.value();
     portfolio::deposit_reward<CoinTypeC>(portfolio, owner, account_name, reward_balance, ctx);
-    amount
+
+    event::emit(CollectRewardEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        position: position_id,
+        coin_type: type_name::get<CoinTypeC>(),
+        amount,
+    });
 }
 
 public(package) fun swap<CoinTypeA, CoinTypeB>(
@@ -321,7 +466,8 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
     sqrt_price_limit: u128,
     clock: &Clock,
     ctx: &mut TxContext,
-): SwapResult {
+) {
+    let before_sqrt_price = pool::current_sqrt_price(pool);
     // flash swap first
     let (receive_a, receive_b, flash_receipt) = pool::flash_swap<CoinTypeA, CoinTypeB>(
         config,
@@ -336,6 +482,10 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
         pool::swap_pay_amount(&flash_receipt),
         if (a2b) balance::value(&receive_b) else balance::value(&receive_a),
     );
+
+    let swap_result = pool::calculate_swap_result(pool, a2b, by_amount_in, amount);
+    let fee_amount = pool::calculated_swap_result_fee_amount(&swap_result);
+    let after_sqrt_price = pool::calculated_swap_result_after_sqrt_price(&swap_result);
 
     // pay for flash swap
     let (pay_coin_a, pay_coin_b) = if (a2b) {
@@ -383,5 +533,15 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
         flash_receipt,
     );
 
-    SwapResult { amount_in, amount_out }
+    event::emit(SwapEvent {
+        owner,
+        account_name,
+        pool: object::id(pool),
+        a2b,
+        amount_in,
+        amount_out,
+        fee_amount,
+        before_sqrt_price,
+        after_sqrt_price,
+    });
 }
