@@ -223,7 +223,11 @@ public fun get_accounts(portfolio: &mut Portfolio, owner: address): vector<Strin
     }
 }
 
-public fun get_owners(portfolio: &mut Portfolio, offset: u64, limit: u64): KeysPage<address> {
+public fun get_owners(portfolio: &mut Portfolio): vector<address> {
+    utils::linked_table_keys(&portfolio.wallets)
+}
+
+public fun get_owners_page(portfolio: &mut Portfolio, offset: u64, limit: u64): KeysPage<address> {
     utils::linked_table_keys_page(&portfolio.wallets, offset, limit)
 }
 
