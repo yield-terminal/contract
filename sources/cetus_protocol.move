@@ -13,6 +13,12 @@ use sui::event;
 use terminal::cetus_portfolio::{Self, CetusPortfolio};
 use terminal::portfolio::{Self, Portfolio};
 
+public struct SwapResult has copy, drop, store {
+    fee_amount: u64,
+    before_sqrt_price: u128,
+    after_sqrt_price: u128,
+}
+
 public struct SwapEvent has copy, drop, store {
     owner: address,
     account_name: String,
@@ -20,9 +26,7 @@ public struct SwapEvent has copy, drop, store {
     a2b: bool,
     amount_in: u64,
     amount_out: u64,
-    fee_amount: u64,
-    before_sqrt_price: u128,
-    after_sqrt_price: u128,
+    result: Option<SwapResult>,
 }
 
 public struct CollectRewardEvent has copy, drop, store {
@@ -464,6 +468,7 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
     by_amount_in: bool,
     amount: u64,
     sqrt_price_limit: u128,
+    swap_result: bool,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -483,9 +488,19 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
         if (a2b) balance::value(&receive_b) else balance::value(&receive_a),
     );
 
-    let swap_result = pool::calculate_swap_result(pool, a2b, by_amount_in, amount);
-    let fee_amount = pool::calculated_swap_result_fee_amount(&swap_result);
-    let after_sqrt_price = pool::calculated_swap_result_after_sqrt_price(&swap_result);
+    let mut result = option::none<SwapResult>();
+
+    if (swap_result) {
+        let swap_result = pool::calculate_swap_result(pool, a2b, by_amount_in, amount);
+        let fee_amount = pool::calculated_swap_result_fee_amount(&swap_result);
+        let after_sqrt_price = pool::calculated_swap_result_after_sqrt_price(&swap_result);
+        result =
+            option::some(SwapResult {
+                fee_amount,
+                before_sqrt_price,
+                after_sqrt_price,
+            })
+    };
 
     // pay for flash swap
     let (pay_coin_a, pay_coin_b) = if (a2b) {
@@ -540,8 +555,6 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
         a2b,
         amount_in,
         amount_out,
-        fee_amount,
-        before_sqrt_price,
-        after_sqrt_price,
+        result,
     });
 }
