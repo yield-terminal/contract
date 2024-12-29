@@ -13,7 +13,7 @@ public struct Pocket has store {
 }
 
 public struct PocketBalance has copy, drop, store {
-    coinType: TypeName,
+    coin_type: TypeName,
     value: u64,
 }
 
@@ -101,7 +101,7 @@ public(package) fun get_balance(pocket: &Pocket): vector<PocketBalance> {
     let len = coins.length();
     while (i < len) {
         balances.push_back(PocketBalance {
-            coinType: coins[i],
+            coin_type: coins[i],
             value: amounts[i],
         })
     };
