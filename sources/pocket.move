@@ -17,7 +17,7 @@ public struct PocketBalance has copy, drop, store {
     value: u64,
 }
 
-public(package) fun new(ctx: &mut TxContext): Pocket {
+public fun new(ctx: &mut TxContext): Pocket {
     Pocket {
         bag: bag::new(ctx),
         coins: vector::empty<TypeName>(),
@@ -25,7 +25,7 @@ public(package) fun new(ctx: &mut TxContext): Pocket {
     }
 }
 
-public(package) fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
+public fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
     if (balance::value(&balance) > 0) {
         let coin_type = type_name::get<T>();
         let pocketBag = &mut pocket.bag;
@@ -49,18 +49,18 @@ public(package) fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
     }
 }
 
-public(package) fun contains<T>(pocket: &Pocket): bool {
+public fun contains<T>(pocket: &Pocket): bool {
     let coin_type = type_name::get<T>();
     let pocketBag = &pocket.bag;
     bag::contains(pocketBag, coin_type)
 }
 
-public(package) fun is_empty(pocket: &Pocket): bool {
+public fun is_empty(pocket: &Pocket): bool {
     let pocketBag = &pocket.bag;
     bag::is_empty(pocketBag)
 }
 
-public(package) fun destroy_empty(pocket: Pocket) {
+public fun destroy_empty(pocket: Pocket) {
     let Pocket {
         bag,
         coins,
@@ -71,7 +71,7 @@ public(package) fun destroy_empty(pocket: Pocket) {
     vector::destroy_empty(amounts);
 }
 
-public(package) fun withdraw<T>(pocket: &mut Pocket, amount: Option<u64>): Balance<T> {
+public fun withdraw<T>(pocket: &mut Pocket, amount: Option<u64>): Balance<T> {
     if (amount.is_some() && amount.borrow() == 0) {
         balance::zero<T>()
     } else {
@@ -93,7 +93,7 @@ public(package) fun withdraw<T>(pocket: &mut Pocket, amount: Option<u64>): Balan
     }
 }
 
-public(package) fun get_balance(pocket: &Pocket): vector<PocketBalance> {
+public fun get_balance(pocket: &Pocket): vector<PocketBalance> {
     let mut balances = vector::empty();
     let coins = &pocket.coins;
     let amounts = &pocket.amounts;
@@ -108,7 +108,7 @@ public(package) fun get_balance(pocket: &Pocket): vector<PocketBalance> {
     balances
 }
 
-public(package) fun transfer<T>(pocket: &mut Pocket, recipient: address, ctx: &mut TxContext) {
+public fun transfer<T>(pocket: &mut Pocket, recipient: address, ctx: &mut TxContext) {
     if (contains<T>(pocket)) {
         let balance: Balance<T> = withdraw(pocket, option::none());
         transfer::public_transfer(coin::from_balance(balance, ctx), recipient);

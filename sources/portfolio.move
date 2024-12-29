@@ -230,7 +230,7 @@ public fun get_balances(
     let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
     let total = wallets.length();
     let mut balances = vector::empty<PortfolioBalance>();
-    let limit_value = if (limit.is_none()) { *limit.borrow() } else { total };
+    let limit_value = if (limit.is_some()) { *limit.borrow() } else { total };
     let mut option_key = &utils::linked_table_key_of(wallets, offset);
 
     while (option_key.is_some() && balances.length() < limit_value) {
@@ -308,7 +308,7 @@ public fun cleanup(portfolio: &mut Portfolio, owner: address, limit: Option<u64>
     if (linked_table::contains(&portfolio.wallets, owner)) {
         let own_wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
 
-        let limit_value = if (limit.is_none()) { *limit.borrow() } else { own_wallets.length() };
+        let limit_value = if (limit.is_some()) { *limit.borrow() } else { own_wallets.length() };
         let mut remove_list = vector::empty<String>();
 
         let mut account_key = own_wallets.front();

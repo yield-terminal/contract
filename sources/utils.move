@@ -26,7 +26,7 @@ public fun linked_table_limit_keys<K: copy + drop + store, V: store>(
     let total = linked_table.length();
     let mut keys = vector::empty<K>();
 
-    let limit_value = if (limit.is_none()) { *limit.borrow() } else { total };
+    let limit_value = if (limit.is_some()) { *limit.borrow() } else { total };
 
     let mut option_key = &linked_table_key_of(linked_table, offset);
 
@@ -43,8 +43,8 @@ public fun linked_table_key_of<K: copy + drop + store, V: store>(
     linked_table: &LinkedTable<K, V>,
     offset: Option<u64>,
 ): Option<K> {
-    let index = if (offset.is_none()) { *offset.borrow() } else { 0 };
     let total = linked_table.length();
+    let index = if (offset.is_some()) { *offset.borrow() } else { 0 };
 
     if (index >= total) return option::none<K>();
     if (index == total - 1) return *linked_table.back();

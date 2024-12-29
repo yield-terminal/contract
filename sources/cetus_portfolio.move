@@ -141,7 +141,7 @@ public fun get_balances(
     let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
     let total = own_positions.length();
     let mut balances = vector::empty<CetusBalance>();
-    let limit_value = if (limit.is_none()) { *limit.borrow() } else { total };
+    let limit_value = if (limit.is_some()) { *limit.borrow() } else { total };
     let mut option_key = &utils::linked_table_key_of(own_positions, offset);
 
     while (option_key.is_some() && balances.length() < limit_value) {
@@ -221,7 +221,7 @@ public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, limit: Option
     if (linked_table::contains(&portfolio.positions, owner)) {
         let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
 
-        let limit_value = if (limit.is_none()) { *limit.borrow() } else { own_positions.length() };
+        let limit_value = if (limit.is_some()) { *limit.borrow() } else { own_positions.length() };
         let mut remove_list = vector::empty<String>();
 
         let mut account_key = own_positions.front();
