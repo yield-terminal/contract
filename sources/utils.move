@@ -3,8 +3,6 @@ module terminal::utils;
 
 use sui::linked_table::LinkedTable;
 
-const EINDEX_OUT_OF_BOUNDS: u64 = 1;
-
 public fun linked_table_keys<K: copy + drop + store, V: store>(
     linked_table: &LinkedTable<K, V>,
 ): vector<K> {
@@ -22,20 +20,20 @@ public fun linked_table_keys<K: copy + drop + store, V: store>(
 
 public fun linked_table_limit_keys<K: copy + drop + store, V: store>(
     linked_table: &LinkedTable<K, V>,
-    offset: u64,
-    limit: u64,
+    limit: Option<u64>,
+    offset: Option<u64>,
 ): (vector<K>, u64) {
     let total = linked_table.length();
     let mut keys = vector::empty<K>();
 
-    if (offset < total && limit > 0) {
-        let mut option_key = &option::some(linked_table_key_of(linked_table, offset));
+    let limit_value = if (limit.is_none()) { *limit.borrow() } else { total };
 
-        while (option_key.is_some() && keys.length() < limit) {
-            let key = *option_key.borrow();
-            option_key = linked_table.next(key);
-            keys.push_back(key);
-        };
+    let mut option_key = &linked_table_key_of(linked_table, offset);
+
+    while (option_key.is_some() && keys.length() < limit_value) {
+        let key = *option_key.borrow();
+        option_key = linked_table.next(key);
+        keys.push_back(key);
     };
 
     (keys, total)
@@ -43,18 +41,20 @@ public fun linked_table_limit_keys<K: copy + drop + store, V: store>(
 
 public fun linked_table_key_of<K: copy + drop + store, V: store>(
     linked_table: &LinkedTable<K, V>,
-    index: u64,
-): K {
+    offset: Option<u64>,
+): Option<K> {
+    let index = if (offset.is_none()) { *offset.borrow() } else { 0 };
     let total = linked_table.length();
-    assert!(index < total, EINDEX_OUT_OF_BOUNDS);
-    if (index == total - 1) return *linked_table.back().borrow();
+
+    if (index >= total) return option::none<K>();
+    if (index == total - 1) return *linked_table.back();
 
     let mut i = 0;
-    let mut key = *linked_table.front().borrow();
+    let mut option_key = linked_table.front();
     while (i != index) {
-        key = *linked_table.next(key).borrow();
+        option_key = linked_table.next(*option_key.borrow());
         i = i + 1;
     };
 
-    key
+    *option_key
 }

@@ -130,32 +130,35 @@ public(package) fun claim_all(portfolio: &mut CetusPortfolio, owner: address) {
 public fun get_balances(
     portfolio: &mut CetusPortfolio,
     owner: address,
-    offset: u64,
-    limit: u64,
+    limit: Option<u64>,
+    offset: Option<u64>,
 ): (vector<CetusBalance>, u64) {
     let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
     let total = own_positions.length();
     let mut balances = vector::empty<CetusBalance>();
+    let limit_value = if (limit.is_none()) { *limit.borrow() } else { total };
+    let mut option_key = &utils::linked_table_key_of(own_positions, offset);
 
-    if (offset < total && limit > 0) {
-        let mut option_key = &option::some(utils::linked_table_key_of(own_positions, offset));
-
-        while (option_key.is_some() && balances.length() < limit) {
-            let account_name = *option_key.borrow();
-            let account_positions = linked_table::borrow(own_positions, account_name);
-            balances.push_back(CetusBalance {
-                account_name,
-                positions: utils::linked_table_keys(account_positions),
-            });
-            option_key = own_positions.next(account_name);
-        };
+    while (option_key.is_some() && balances.length() < limit_value) {
+        let account_name = *option_key.borrow();
+        let account_positions = linked_table::borrow(own_positions, account_name);
+        balances.push_back(CetusBalance {
+            account_name,
+            positions: utils::linked_table_keys(account_positions),
+        });
+        option_key = own_positions.next(account_name);
     };
 
     (balances, total)
 }
 
-public fun fetch_balances(portfolio: &mut CetusPortfolio, owner: address, offset: u64, limit: u64) {
-    let (balances, total) = get_balances(portfolio, owner, offset, limit);
+public fun fetch_balances(
+    portfolio: &mut CetusPortfolio,
+    owner: address,
+    limit: Option<u64>,
+    offset: Option<u64>,
+) {
+    let (balances, total) = get_balances(portfolio, owner, limit, offset);
     event::emit(FetchCetusBalanceEvent {
         owner,
         balances,
@@ -166,19 +169,24 @@ public fun fetch_balances(portfolio: &mut CetusPortfolio, owner: address, offset
 public fun get_accounts(
     portfolio: &mut CetusPortfolio,
     owner: address,
-    offset: u64,
-    limit: u64,
+    limit: Option<u64>,
+    offset: Option<u64>,
 ): (vector<String>, u64) {
     if (linked_table::contains(&portfolio.positions, owner)) {
         let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
-        utils::linked_table_limit_keys(own_positions, offset, limit)
+        utils::linked_table_limit_keys(own_positions, limit, offset)
     } else {
         (vector::empty<String>(), 0)
     }
 }
 
-public fun fetch_accounts(portfolio: &mut CetusPortfolio, owner: address, offset: u64, limit: u64) {
-    let (accounts, total) = get_accounts(portfolio, owner, offset, limit);
+public fun fetch_accounts(
+    portfolio: &mut CetusPortfolio,
+    owner: address,
+    limit: Option<u64>,
+    offset: Option<u64>,
+) {
+    let (accounts, total) = get_accounts(portfolio, owner, limit, offset);
     event::emit(FetchCetusAccountEvent {
         owner,
         accounts,
@@ -188,28 +196,29 @@ public fun fetch_accounts(portfolio: &mut CetusPortfolio, owner: address, offset
 
 public fun get_owners(
     portfolio: &mut CetusPortfolio,
-    offset: u64,
-    limit: u64,
+    limit: Option<u64>,
+    offset: Option<u64>,
 ): (vector<address>, u64) {
-    utils::linked_table_limit_keys(&portfolio.positions, offset, limit)
+    utils::linked_table_limit_keys(&portfolio.positions, limit, offset)
 }
 
-public fun fetch_owners(portfolio: &mut CetusPortfolio, offset: u64, limit: u64) {
-    let (owners, total) = get_owners(portfolio, offset, limit);
+public fun fetch_owners(portfolio: &mut CetusPortfolio, limit: Option<u64>, offset: Option<u64>) {
+    let (owners, total) = get_owners(portfolio, limit, offset);
     event::emit(FetchCetusOwnerEvent {
         owners,
         total,
     });
 }
 
-public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, limit: u64) {
+public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, limit: Option<u64>) {
     if (linked_table::contains(&portfolio.positions, owner)) {
         let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
 
+        let limit_value = if (limit.is_none()) { *limit.borrow() } else { own_positions.length() };
         let mut remove_list = vector::empty<String>();
 
         let mut account_key = own_positions.front();
-        while (account_key.is_some() && remove_list.length() < limit) {
+        while (account_key.is_some() && remove_list.length() < limit_value) {
             let account_name = *account_key.borrow();
             account_key = own_positions.next(account_name);
 

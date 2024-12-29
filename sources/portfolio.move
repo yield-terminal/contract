@@ -219,30 +219,33 @@ public(package) fun claim_all_reward<T>(
 public fun get_balances(
     portfolio: &mut Portfolio,
     owner: address,
-    offset: u64,
-    limit: u64,
+    limit: Option<u64>,
+    offset: Option<u64>,
 ): (vector<PortfolioBalance>, u64) {
     let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
     let total = wallets.length();
     let mut balances = vector::empty<PortfolioBalance>();
+    let limit_value = if (limit.is_none()) { *limit.borrow() } else { total };
+    let mut option_key = &utils::linked_table_key_of(wallets, offset);
 
-    if (offset < total && limit > 0) {
-        let mut option_key = &option::some(utils::linked_table_key_of(wallets, offset));
-
-        while (option_key.is_some() && balances.length() < limit) {
-            let account_name = *option_key.borrow();
-            let wallet = linked_table::borrow(wallets, account_name);
-            let balance = wallet::get_balance(wallet);
-            balances.push_back(PortfolioBalance { account_name, balance });
-            option_key = wallets.next(account_name);
-        };
+    while (option_key.is_some() && balances.length() < limit_value) {
+        let account_name = *option_key.borrow();
+        let wallet = linked_table::borrow(wallets, account_name);
+        let balance = wallet::get_balance(wallet);
+        balances.push_back(PortfolioBalance { account_name, balance });
+        option_key = wallets.next(account_name);
     };
 
     (balances, total)
 }
 
-public fun fetch_balances(portfolio: &mut Portfolio, owner: address, offset: u64, limit: u64) {
-    let (balances, total) = get_balances(portfolio, owner, offset, limit);
+public fun fetch_balances(
+    portfolio: &mut Portfolio,
+    owner: address,
+    limit: Option<u64>,
+    offset: Option<u64>,
+) {
+    let (balances, total) = get_balances(portfolio, owner, limit, offset);
     event::emit(FetchBalanceEvent {
         owner,
         balances,
@@ -253,19 +256,24 @@ public fun fetch_balances(portfolio: &mut Portfolio, owner: address, offset: u64
 public fun get_accounts(
     portfolio: &mut Portfolio,
     owner: address,
-    offset: u64,
-    limit: u64,
+    limit: Option<u64>,
+    offset: Option<u64>,
 ): (vector<String>, u64) {
     if (linked_table::contains(&portfolio.wallets, owner)) {
         let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
-        utils::linked_table_limit_keys(wallets, offset, limit)
+        utils::linked_table_limit_keys(wallets, limit, offset)
     } else {
         (vector::empty<String>(), 0)
     }
 }
 
-public fun fetch_accounts(portfolio: &mut Portfolio, owner: address, offset: u64, limit: u64) {
-    let (accounts, total) = get_accounts(portfolio, owner, offset, limit);
+public fun fetch_accounts(
+    portfolio: &mut Portfolio,
+    owner: address,
+    limit: Option<u64>,
+    offset: Option<u64>,
+) {
+    let (accounts, total) = get_accounts(portfolio, owner, limit, offset);
     event::emit(FetchAccountEvent {
         owner,
         accounts,
@@ -273,26 +281,31 @@ public fun fetch_accounts(portfolio: &mut Portfolio, owner: address, offset: u64
     });
 }
 
-public fun get_owners(portfolio: &mut Portfolio, offset: u64, limit: u64): (vector<address>, u64) {
-    utils::linked_table_limit_keys(&portfolio.wallets, offset, limit)
+public fun get_owners(
+    portfolio: &mut Portfolio,
+    limit: Option<u64>,
+    offset: Option<u64>,
+): (vector<address>, u64) {
+    utils::linked_table_limit_keys(&portfolio.wallets, limit, offset)
 }
 
-public fun fetch_owners(portfolio: &mut Portfolio, offset: u64, limit: u64) {
-    let (owners, total) = get_owners(portfolio, offset, limit);
+public fun fetch_owners(portfolio: &mut Portfolio, limit: Option<u64>, offset: Option<u64>) {
+    let (owners, total) = get_owners(portfolio, limit, offset);
     event::emit(FetchOwnerEvent {
         owners,
         total,
     });
 }
 
-public fun cleanup(portfolio: &mut Portfolio, owner: address, limit: u64) {
+public fun cleanup(portfolio: &mut Portfolio, owner: address, limit: Option<u64>) {
     if (linked_table::contains(&portfolio.wallets, owner)) {
         let own_wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
 
+        let limit_value = if (limit.is_none()) { *limit.borrow() } else { own_wallets.length() };
         let mut remove_list = vector::empty<String>();
 
         let mut account_key = own_wallets.front();
-        while (account_key.is_some() && remove_list.length() < limit) {
+        while (account_key.is_some() && remove_list.length() < limit_value) {
             let account_name = *account_key.borrow();
             account_key = own_wallets.next(account_name);
 
