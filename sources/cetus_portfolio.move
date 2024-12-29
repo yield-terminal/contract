@@ -34,6 +34,11 @@ public struct FetchCetusAccountEvent has copy, drop, store {
     total: u64,
 }
 
+public struct CleanupCetusEvent has copy, drop, store {
+    owner: address,
+    done: bool,
+}
+
 fun init(ctx: &mut TxContext) {
     transfer::share_object(CetusPortfolio {
         id: object::new(ctx),
@@ -211,6 +216,8 @@ public fun fetch_owners(portfolio: &mut CetusPortfolio, limit: Option<u64>, offs
 }
 
 public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, limit: Option<u64>) {
+    let mut done = true;
+
     if (linked_table::contains(&portfolio.positions, owner)) {
         let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
 
@@ -226,6 +233,10 @@ public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, limit: Option
             if (linked_table::is_empty(account_positions)) {
                 remove_list.push_back(account_name);
             };
+
+            if (account_key.is_some() && remove_list.length() == limit_value) {
+                done = false;
+            };
         };
 
         let mut i = 0;
@@ -240,5 +251,10 @@ public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, limit: Option
             let positions = linked_table::remove(&mut portfolio.positions, owner);
             linked_table::destroy_empty(positions);
         };
-    }
+    };
+
+    event::emit(CleanupCetusEvent {
+        owner,
+        done,
+    });
 }

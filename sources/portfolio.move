@@ -35,6 +35,11 @@ public struct FetchAccountEvent has copy, drop, store {
     total: u64,
 }
 
+public struct CleanupEvent has copy, drop, store {
+    owner: address,
+    done: bool,
+}
+
 fun init(ctx: &mut TxContext) {
     transfer::share_object(Portfolio {
         id: object::new(ctx),
@@ -298,6 +303,8 @@ public fun fetch_owners(portfolio: &mut Portfolio, limit: Option<u64>, offset: O
 }
 
 public fun cleanup(portfolio: &mut Portfolio, owner: address, limit: Option<u64>) {
+    let mut done = true;
+
     if (linked_table::contains(&portfolio.wallets, owner)) {
         let own_wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
 
@@ -313,6 +320,10 @@ public fun cleanup(portfolio: &mut Portfolio, owner: address, limit: Option<u64>
             if (wallet::is_empty(own_wallet)) {
                 remove_list.push_back(account_name);
             };
+
+            if (account_key.is_some() && remove_list.length() == limit_value) {
+                done = false;
+            };
         };
 
         let mut i = 0;
@@ -327,5 +338,10 @@ public fun cleanup(portfolio: &mut Portfolio, owner: address, limit: Option<u64>
             let wallets = linked_table::remove(&mut portfolio.wallets, owner);
             linked_table::destroy_empty(wallets);
         };
-    }
+    };
+    
+    event::emit(CleanupEvent {
+        owner,
+        done,
+    });
 }
