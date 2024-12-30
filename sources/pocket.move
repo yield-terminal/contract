@@ -8,11 +8,10 @@ use sui::coin;
 
 public struct Pocket has store {
     bag: Bag,
-    coins: vector<TypeName>,
-    amounts: vector<u64>,
+    balances: vector<CoinBalance>,
 }
 
-public struct PocketBalance has copy, drop, store {
+public struct CoinBalance has copy, drop, store {
     coin_type: TypeName,
     value: u64,
 }
@@ -20,8 +19,7 @@ public struct PocketBalance has copy, drop, store {
 public fun new(ctx: &mut TxContext): Pocket {
     Pocket {
         bag: bag::new(ctx),
-        coins: vector::empty<TypeName>(),
-        amounts: vector::empty<u64>(),
+        balances: vector::empty<CoinBalance>(),
     }
 }
 
@@ -29,19 +27,18 @@ public fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
     if (balance::value(&balance) > 0) {
         let coin_type = type_name::get<T>();
         let pocketBag = &mut pocket.bag;
+        let balances = &mut pocket.balances;
         if (bag::contains(pocketBag, coin_type)) {
             let current: &mut Balance<T> = bag::borrow_mut(pocketBag, coin_type);
             balance::join(current, balance);
-            let coins = &pocket.coins;
-            let (_, i) = vector::index_of(coins, &coin_type);
-            let amounts = &mut pocket.amounts;
-            vector::remove(amounts, i);
-            vector::insert(amounts, balance::value(current), i);
+            let i = balances.find_index!(|b| b.coin_type == coin_type);
+            let coin_balance = balances.borrow_mut(*i.borrow());
+            coin_balance.value = current.value();
         } else {
-            let coins = &mut pocket.coins;
-            let amounts = &mut pocket.amounts;
-            vector::push_back(coins, coin_type);
-            vector::push_back(amounts, balance::value(&balance));
+            balances.push_back(CoinBalance {
+                coin_type,
+                value: balance.value(),
+            });
             bag::add(pocketBag, coin_type, balance);
         }
     } else {
@@ -49,63 +46,71 @@ public fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
     }
 }
 
-public fun contains<T>(pocket: &Pocket): bool {
-    let coin_type = type_name::get<T>();
-    let pocketBag = &pocket.bag;
-    bag::contains(pocketBag, coin_type)
-}
-
-public fun is_empty(pocket: &Pocket): bool {
-    let pocketBag = &pocket.bag;
-    bag::is_empty(pocketBag)
-}
-
-public fun destroy_empty(pocket: Pocket) {
-    let Pocket {
-        bag,
-        coins,
-        amounts,
-    } = pocket;
-    bag::destroy_empty(bag);
-    vector::destroy_empty(coins);
-    vector::destroy_empty(amounts);
-}
-
 public fun withdraw<T>(pocket: &mut Pocket, amount: Option<u64>): Balance<T> {
     if (amount.is_some() && amount.borrow() == 0) {
         balance::zero<T>()
     } else {
         let coin_type = type_name::get<T>();
-        let coins = &mut pocket.coins;
-        let amounts = &mut pocket.amounts;
-        let (_, i) = vector::index_of(coins, &coin_type);
-        if (!amount.is_some() || amounts[i] == amount.borrow()) {
-            vector::remove(coins, i);
-            vector::remove(amounts, i);
-            let pocketBag = &mut pocket.bag;
-            let value: Balance<T> = bag::remove(pocketBag, coin_type);
-            value
+        let pocketBag = &mut pocket.bag;
+        let balances = &mut pocket.balances;
+        let balance: &Balance<T> = bag::borrow(pocketBag, coin_type);
+        if (amount.is_none() || balance.value() == amount.borrow()) {
+            let i = balances.find_index!(|b| b.coin_type == coin_type);
+            balances.remove(*i.borrow());
+            bag::remove(pocketBag, coin_type)
         } else {
             let pocketBag = &mut pocket.bag;
-            let value: &mut Balance<T> = bag::borrow_mut(pocketBag, coin_type);
-            balance::split(value, *amount.borrow())
+            let current: &mut Balance<T> = bag::borrow_mut(pocketBag, coin_type);
+            balance::split(current, *amount.borrow())
         }
     }
 }
 
-public fun get_balance(pocket: &Pocket): vector<PocketBalance> {
-    let mut balances = vector::empty();
-    let coins = &pocket.coins;
-    let amounts = &pocket.amounts;
-    let i = 0;
-    let len = coins.length();
-    while (i < len) {
-        balances.push_back(PocketBalance {
-            coin_type: coins[i],
-            value: amounts[i],
-        })
-    };
-    balances
+public fun get_all_balances(pocket: &Pocket): vector<CoinBalance> {
+    pocket.balances
+}
+
+public fun contains<T>(pocket: &Pocket): bool {
+    let coin_type = type_name::get<T>();
+    bag::contains(&pocket.bag, coin_type)
+}
+
+public fun is_empty(pocket: &Pocket): bool {
+    bag::is_empty(&pocket.bag)
+}
+
+public fun destroy_empty(pocket: Pocket) {
+    let Pocket {
+        bag,
+        balances,
+    } = pocket;
+    bag::destroy_empty(bag);
+    vector::destroy_empty(balances);
+}
+
+public fun zero_balance<T>(): CoinBalance {
+    let coin_type = type_name::get<T>();
+    CoinBalance {
+        coin_type,
+        value: 0,
+    }
+}
+
+public fun get_balance<T>(pocket: &Pocket): CoinBalance {
+    let coin_type = type_name::get<T>();
+    if (bag::contains(&pocket.bag, coin_type)) {
+        let balance: &Balance<T> = bag::borrow(&pocket.bag, coin_type);
+        CoinBalance {
+            coin_type,
+            value: balance.value(),
+        }
+    } else {
+        zero_balance<T>()
+    }
+}
+
+public fun get_pool_balance<A, B>(pocket: &Pocket): (CoinBalance, CoinBalance) {
+    (get_balance<A>(pocket), get_balance<B>(pocket))
 }
 
 public fun transfer<T>(pocket: &mut Pocket, recipient: address, ctx: &mut TxContext) {

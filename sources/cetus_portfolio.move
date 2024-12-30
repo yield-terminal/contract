@@ -34,11 +34,6 @@ public struct FetchCetusAccountEvent has copy, drop, store {
     total: u64,
 }
 
-public struct CleanupCetusEvent has copy, drop, store {
-    owner: address,
-    done: bool,
-}
-
 fun init(ctx: &mut TxContext) {
     transfer::share_object(CetusPortfolio {
         id: object::new(ctx),
@@ -66,6 +61,49 @@ fun add_account_if_not_exist(
     }
 }
 
+fun borrow_or_new_positions_mut(
+    portfolio: &mut CetusPortfolio,
+    owner: address,
+    account_name: String,
+    ctx: &mut TxContext,
+): &mut LinkedTable<ID, Position> {
+    add_owner_if_not_exist(portfolio, owner, ctx);
+    let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
+    add_account_if_not_exist(own_positions, account_name, ctx);
+    linked_table::borrow_mut(own_positions, account_name)
+}
+
+fun borrow_positions_mut(
+    portfolio: &mut CetusPortfolio,
+    owner: address,
+    account_name: String,
+): &mut LinkedTable<ID, Position> {
+    let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
+    linked_table::borrow_mut(own_positions, account_name)
+}
+
+fun borrow_positions(
+    portfolio: &CetusPortfolio,
+    owner: address,
+    account_name: String,
+): &LinkedTable<ID, Position> {
+    let own_positions = linked_table::borrow(&portfolio.positions, owner);
+    linked_table::borrow(own_positions, account_name)
+}
+
+fun has_own_positions(portfolio: &CetusPortfolio, owner: address): bool {
+    linked_table::contains(&portfolio.positions, owner)
+}
+
+fun has_account_positions(portfolio: &CetusPortfolio, owner: address, account_name: String): bool {
+    if (has_own_positions(portfolio, owner)) {
+        let positions = linked_table::borrow(&portfolio.positions, owner);
+        linked_table::contains(positions, account_name)
+    } else {
+        false
+    }
+}
+
 public(package) fun deposit_position(
     portfolio: &mut CetusPortfolio,
     owner: address,
@@ -73,12 +111,8 @@ public(package) fun deposit_position(
     position: Position,
     ctx: &mut TxContext,
 ) {
-    add_owner_if_not_exist(portfolio, owner, ctx);
-    let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
-    add_account_if_not_exist(own_positions, account_name, ctx);
-    let account_positions = linked_table::borrow_mut(own_positions, account_name);
-    let id = object::id(&position);
-    linked_table::push_back(account_positions, id, position);
+    let positions = borrow_or_new_positions_mut(portfolio, owner, account_name, ctx);
+    linked_table::push_back(positions, object::id(&position), position);
 }
 
 public(package) fun withdraw_position(
@@ -87,20 +121,18 @@ public(package) fun withdraw_position(
     account_name: String,
     position_id: ID,
 ): Position {
-    let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
-    let account_positions = linked_table::borrow_mut(own_positions, account_name);
-    linked_table::remove(account_positions, position_id)
+    let positions = borrow_positions_mut(portfolio, owner, account_name);
+    linked_table::remove(positions, position_id)
 }
 
 public(package) fun borrow_position(
-    portfolio: &mut CetusPortfolio,
+    portfolio: &CetusPortfolio,
     owner: address,
     account_name: String,
     position_id: ID,
 ): &Position {
-    let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
-    let account_positions = linked_table::borrow_mut(own_positions, account_name);
-    linked_table::borrow(account_positions, position_id)
+    let positions = borrow_positions(portfolio, owner, account_name);
+    linked_table::borrow(positions, position_id)
 }
 
 public(package) fun borrow_position_mut(
@@ -109,9 +141,8 @@ public(package) fun borrow_position_mut(
     account_name: String,
     position_id: ID,
 ): &mut Position {
-    let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
-    let account_positions = linked_table::borrow_mut(own_positions, account_name);
-    linked_table::borrow_mut(account_positions, position_id)
+    let positions = borrow_positions_mut(portfolio, owner, account_name);
+    linked_table::borrow_mut(positions, position_id)
 }
 
 public(package) fun claim_all(portfolio: &mut CetusPortfolio, owner: address) {
@@ -215,46 +246,11 @@ public fun fetch_owners(portfolio: &mut CetusPortfolio, limit: Option<u64>, offs
     });
 }
 
-public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, limit: Option<u64>) {
-    let mut done = true;
-
-    if (linked_table::contains(&portfolio.positions, owner)) {
-        let own_positions = linked_table::borrow_mut(&mut portfolio.positions, owner);
-
-        let limit_value = if (limit.is_some()) { *limit.borrow() } else { own_positions.length() };
-        let mut remove_list = vector::empty<String>();
-
-        let mut account_key = own_positions.front();
-        while (account_key.is_some() && remove_list.length() < limit_value) {
-            let account_name = *account_key.borrow();
-            account_key = own_positions.next(account_name);
-
-            let account_positions = linked_table::borrow(own_positions, account_name);
-            if (linked_table::is_empty(account_positions)) {
-                remove_list.push_back(account_name);
-            };
-
-            if (account_key.is_some() && remove_list.length() == limit_value) {
-                done = false;
-            };
-        };
-
-        let mut i = 0;
-        while (i < remove_list.length()) {
-            let account_name = remove_list[i];
-            let positions = linked_table::remove(own_positions, account_name);
-            linked_table::destroy_empty(positions);
-            i = i + 1;
-        };
-
-        if (linked_table::is_empty(own_positions)) {
-            let positions = linked_table::remove(&mut portfolio.positions, owner);
-            linked_table::destroy_empty(positions);
-        };
+public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, account_name: String) {
+    if (has_account_positions(portfolio, owner, account_name)) {
+        let own_positions = portfolio.positions.borrow_mut(owner);
+        if (own_positions.borrow(account_name).is_empty()) {
+            own_positions.remove(account_name).destroy_empty();
+        }
     };
-
-    event::emit(CleanupCetusEvent {
-        owner,
-        done,
-    });
 }

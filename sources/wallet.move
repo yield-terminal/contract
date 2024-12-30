@@ -2,7 +2,7 @@
 module terminal::wallet;
 
 use sui::balance::Balance;
-use terminal::pocket::{Self, Pocket, PocketBalance};
+use terminal::pocket::{Self, Pocket, CoinBalance};
 
 public struct Wallet has store {
     main: Pocket,
@@ -11,9 +11,9 @@ public struct Wallet has store {
 }
 
 public struct WalletBalance has copy, drop, store {
-    main: vector<PocketBalance>,
-    fee: vector<PocketBalance>,
-    reward: vector<PocketBalance>,
+    main: vector<CoinBalance>,
+    fee: vector<CoinBalance>,
+    reward: vector<CoinBalance>,
 }
 
 public fun new(ctx: &mut TxContext): Wallet {
@@ -51,14 +51,14 @@ public fun withdraw_reward<T>(wallet: &mut Wallet, amount: Option<u64>): Balance
 public fun apply_fee<T>(wallet: &mut Wallet) {
     if (pocket::contains<T>(&wallet.fee)) {
         let balance = withdraw_fee<T>(wallet, option::none());
-        deposit_fee<T>(wallet, balance);
+        deposit<T>(wallet, balance);
     }
 }
 
 public fun apply_reward<T>(wallet: &mut Wallet) {
     if (pocket::contains<T>(&wallet.reward)) {
         let balance = withdraw_reward<T>(wallet, option::none());
-        deposit_reward<T>(wallet, balance);
+        deposit<T>(wallet, balance);
     }
 }
 
@@ -89,10 +89,18 @@ public fun destroy_empty(wallet: Wallet) {
     pocket::destroy_empty(reward);
 }
 
-public fun get_balance(wallet: &Wallet): WalletBalance {
+public fun get_all_balances(wallet: &Wallet): WalletBalance {
     WalletBalance {
-        main: pocket::get_balance(&wallet.main),
-        fee: pocket::get_balance(&wallet.fee),
-        reward: pocket::get_balance(&wallet.reward),
+        main: pocket::get_all_balances(&wallet.main),
+        fee: pocket::get_all_balances(&wallet.fee),
+        reward: pocket::get_all_balances(&wallet.reward),
     }
+}
+
+public fun get_balance<T>(wallet: &Wallet): CoinBalance {
+    pocket::get_balance<T>(&wallet.main)
+}
+
+public fun get_pool_balance<A, B>(wallet: &Wallet): (CoinBalance, CoinBalance) {
+    pocket::get_pool_balance<A, B>(&wallet.main)
 }
