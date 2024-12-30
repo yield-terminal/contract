@@ -25,57 +25,55 @@ public fun new(ctx: &mut TxContext): Wallet {
 }
 
 public fun deposit<T>(wallet: &mut Wallet, balance: Balance<T>) {
-    pocket::deposit(&mut wallet.main, balance);
+    wallet.main.deposit<T>(balance);
 }
 
 public fun deposit_fee<T>(wallet: &mut Wallet, balance: Balance<T>) {
-    pocket::deposit(&mut wallet.fee, balance);
+    wallet.fee.deposit<T>(balance);
 }
 
 public fun deposit_reward<T>(wallet: &mut Wallet, balance: Balance<T>) {
-    pocket::deposit(&mut wallet.reward, balance);
+    wallet.reward.deposit<T>(balance);
 }
 
 public fun withdraw<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
-    pocket::withdraw<T>(&mut wallet.main, amount)
+    wallet.main.withdraw<T>(amount)
 }
 
 public fun withdraw_fee<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
-    pocket::withdraw<T>(&mut wallet.fee, amount)
+    wallet.fee.withdraw<T>(amount)
 }
 
 public fun withdraw_reward<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
-    pocket::withdraw<T>(&mut wallet.reward, amount)
+    wallet.reward.withdraw<T>(amount)
 }
 
 public fun apply_fee<T>(wallet: &mut Wallet) {
-    if (pocket::contains<T>(&wallet.fee)) {
-        let balance = withdraw_fee<T>(wallet, option::none());
-        deposit<T>(wallet, balance);
-    }
+    if (wallet.fee.contains<T>()) {
+        wallet.main.deposit<T>(wallet.fee.withdraw(option::none()));
+    };
 }
 
 public fun apply_reward<T>(wallet: &mut Wallet) {
-    if (pocket::contains<T>(&wallet.reward)) {
-        let balance = withdraw_reward<T>(wallet, option::none());
-        deposit<T>(wallet, balance);
-    }
+    if (wallet.reward.contains<T>()) {
+        wallet.main.deposit<T>(wallet.reward.withdraw(option::none()));
+    };
 }
 
 public fun transfer<T>(wallet: &mut Wallet, recipient: address, ctx: &mut TxContext) {
-    pocket::transfer<T>(&mut wallet.main, recipient, ctx);
+    wallet.main.transfer<T>(recipient, ctx);
 }
 
 public fun transfer_fee<T>(wallet: &mut Wallet, recipient: address, ctx: &mut TxContext) {
-    pocket::transfer<T>(&mut wallet.fee, recipient, ctx);
+    wallet.fee.transfer<T>(recipient, ctx);
 }
 
 public fun transfer_reward<T>(wallet: &mut Wallet, recipient: address, ctx: &mut TxContext) {
-    pocket::transfer<T>(&mut wallet.reward, recipient, ctx);
+    wallet.reward.transfer<T>(recipient, ctx);
 }
 
 public fun is_empty(wallet: &Wallet): bool {
-    pocket::is_empty(&wallet.main) && pocket::is_empty(&wallet.fee) && pocket::is_empty(&wallet.reward)
+    wallet.main.is_empty() && wallet.fee.is_empty() && wallet.reward.is_empty()
 }
 
 public fun destroy_empty(wallet: Wallet) {
@@ -84,23 +82,23 @@ public fun destroy_empty(wallet: Wallet) {
         fee,
         reward,
     } = wallet;
-    pocket::destroy_empty(main);
-    pocket::destroy_empty(fee);
-    pocket::destroy_empty(reward);
+    main.destroy_empty();
+    fee.destroy_empty();
+    reward.destroy_empty();
 }
 
 public fun get_all_balances(wallet: &Wallet): WalletBalance {
     WalletBalance {
-        main: pocket::get_all_balances(&wallet.main),
-        fee: pocket::get_all_balances(&wallet.fee),
-        reward: pocket::get_all_balances(&wallet.reward),
+        main: wallet.main.get_all_balances(),
+        fee: wallet.fee.get_all_balances(),
+        reward: wallet.reward.get_all_balances(),
     }
 }
 
 public fun get_balance<T>(wallet: &Wallet): CoinBalance {
-    pocket::get_balance<T>(&wallet.main)
+    wallet.main.get_balance<T>()
 }
 
 public fun get_pool_balance<A, B>(wallet: &Wallet): (CoinBalance, CoinBalance) {
-    pocket::get_pool_balance<A, B>(&wallet.main)
+    wallet.main.get_pool_balance<A, B>()
 }

@@ -57,12 +57,13 @@ fun init(ctx: &mut TxContext) {
 }
 
 fun add_owner_if_not_exist(portfolio: &mut Portfolio, owner: address, ctx: &mut TxContext) {
-    if (!linked_table::contains(&portfolio.wallets, owner)) {
-        linked_table::push_back(
-            &mut portfolio.wallets,
-            owner,
-            linked_table::new<String, Wallet>(ctx),
-        );
+    if (!portfolio.wallets.contains(owner)) {
+        portfolio
+            .wallets
+            .push_back(
+                owner,
+                linked_table::new<String, Wallet>(ctx),
+            );
     }
 }
 
@@ -71,8 +72,8 @@ fun add_account_if_not_exist(
     account_name: String,
     ctx: &mut TxContext,
 ) {
-    if (!linked_table::contains(own_wallets, account_name)) {
-        linked_table::push_back(own_wallets, account_name, wallet::new(ctx));
+    if (!own_wallets.contains(account_name)) {
+        own_wallets.push_back(account_name, wallet::new(ctx));
     }
 }
 
@@ -83,9 +84,9 @@ fun borrow_or_new_wallet_mut(
     ctx: &mut TxContext,
 ): &mut Wallet {
     add_owner_if_not_exist(portfolio, owner, ctx);
-    let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
+    let wallets = portfolio.wallets.borrow_mut(owner);
     add_account_if_not_exist(wallets, account_name, ctx);
-    linked_table::borrow_mut(wallets, account_name)
+    wallets.borrow_mut(account_name)
 }
 
 fun borrow_wallet_mut(
@@ -93,23 +94,17 @@ fun borrow_wallet_mut(
     owner: address,
     account_name: String,
 ): &mut Wallet {
-    let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
-    linked_table::borrow_mut(wallets, account_name)
+    portfolio.wallets.borrow_mut(owner).borrow_mut(account_name)
 }
 
 fun borrow_wallet(portfolio: &Portfolio, owner: address, account_name: String): &Wallet {
-    let wallets = linked_table::borrow(&portfolio.wallets, owner);
-    linked_table::borrow(wallets, account_name)
-}
-
-fun has_wallets(portfolio: &Portfolio, owner: address): bool {
-    linked_table::contains(&portfolio.wallets, owner)
+    portfolio.wallets.borrow(owner).borrow(account_name)
 }
 
 fun has_wallet(portfolio: &Portfolio, owner: address, account_name: String): bool {
-    if (has_wallets(portfolio, owner)) {
-        let wallets = linked_table::borrow(&portfolio.wallets, owner);
-        linked_table::contains(wallets, account_name)
+    if (portfolio.wallets.contains(owner)) {
+        let wallets = portfolio.wallets.borrow(owner);
+        wallets.contains(account_name)
     } else {
         false
     }
@@ -123,7 +118,7 @@ public(package) fun deposit<T>(
     ctx: &mut TxContext,
 ) {
     let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
-    wallet::deposit(wallet, balance);
+    wallet.deposit(balance);
 }
 
 public(package) fun deposit_fee<T>(
@@ -134,7 +129,7 @@ public(package) fun deposit_fee<T>(
     ctx: &mut TxContext,
 ) {
     let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
-    wallet::deposit_fee(wallet, balance);
+    wallet.deposit_fee(balance);
 }
 
 public(package) fun deposit_reward<T>(
@@ -145,7 +140,7 @@ public(package) fun deposit_reward<T>(
     ctx: &mut TxContext,
 ) {
     let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
-    wallet::deposit_reward(wallet, balance);
+    wallet.deposit_reward(balance);
 }
 
 public(package) fun withdraw<T>(
@@ -156,7 +151,7 @@ public(package) fun withdraw<T>(
 ): Balance<T> {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::withdraw<T>(wallet, amount)
+        wallet.withdraw<T>(amount)
     } else {
         balance::zero<T>()
     }
@@ -170,7 +165,7 @@ public(package) fun withdraw_fee<T>(
 ): Balance<T> {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::withdraw_fee<T>(wallet, amount)
+        wallet.withdraw_fee<T>(amount)
     } else {
         balance::zero<T>()
     }
@@ -184,7 +179,7 @@ public(package) fun withdraw_reward<T>(
 ): Balance<T> {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::withdraw_reward<T>(wallet, amount)
+        wallet.withdraw_reward<T>(amount)
     } else {
         balance::zero<T>()
     }
@@ -193,7 +188,7 @@ public(package) fun withdraw_reward<T>(
 public(package) fun apply_fee<T>(portfolio: &mut Portfolio, owner: address, account_name: String) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::apply_fee<T>(wallet);
+        wallet.apply_fee<T>();
     }
 }
 
@@ -204,7 +199,7 @@ public(package) fun apply_reward<T>(
 ) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::apply_reward<T>(wallet);
+        wallet.apply_reward<T>();
     }
 }
 
@@ -216,7 +211,7 @@ public(package) fun claim<T>(
 ) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::transfer<T>(wallet, owner, ctx);
+        wallet.transfer<T>(owner, ctx);
     }
 }
 
@@ -228,7 +223,7 @@ public(package) fun claim_fee<T>(
 ) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::transfer_fee<T>(wallet, owner, ctx);
+        wallet.transfer_fee<T>(owner, ctx);
     }
 }
 
@@ -240,18 +235,18 @@ public(package) fun claim_reward<T>(
 ) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet::transfer_reward<T>(wallet, owner, ctx);
+        wallet.transfer_reward<T>(owner, ctx);
     }
 }
 
 public(package) fun claim_all<T>(portfolio: &mut Portfolio, owner: address, ctx: &mut TxContext) {
-    if (has_wallets(portfolio, owner)) {
-        let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
+    if (portfolio.wallets.contains(owner)) {
+        let wallets = portfolio.wallets.borrow_mut(owner);
         let mut option_key = wallets.front();
 
         while (option_key.is_some()) {
             let account_name = *option_key.borrow();
-            wallet::transfer<T>(linked_table::borrow_mut(wallets, account_name), owner, ctx);
+            wallets.borrow_mut(account_name).transfer<T>(owner, ctx);
             option_key = wallets.next(account_name);
         };
     }
@@ -262,13 +257,13 @@ public(package) fun claim_all_fee<T>(
     owner: address,
     ctx: &mut TxContext,
 ) {
-    if (has_wallets(portfolio, owner)) {
-        let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
+    if (portfolio.wallets.contains(owner)) {
+        let wallets = portfolio.wallets.borrow_mut(owner);
         let mut option_key = wallets.front();
 
         while (option_key.is_some()) {
             let account_name = *option_key.borrow();
-            wallet::transfer_fee<T>(linked_table::borrow_mut(wallets, account_name), owner, ctx);
+            wallets.borrow_mut(account_name).transfer_fee<T>(owner, ctx);
             option_key = wallets.next(account_name);
         };
     }
@@ -279,13 +274,13 @@ public(package) fun claim_all_reward<T>(
     owner: address,
     ctx: &mut TxContext,
 ) {
-    if (has_wallets(portfolio, owner)) {
-        let wallets = linked_table::borrow_mut(&mut portfolio.wallets, owner);
+    if (portfolio.wallets.contains(owner)) {
+        let wallets = portfolio.wallets.borrow_mut(owner);
         let mut option_key = wallets.front();
 
         while (option_key.is_some()) {
             let account_name = *option_key.borrow();
-            wallet::transfer_reward<T>(linked_table::borrow_mut(wallets, account_name), owner, ctx);
+            wallets.borrow_mut(account_name).transfer_reward<T>(owner, ctx);
             option_key = wallets.next(account_name);
         };
     }
@@ -300,16 +295,16 @@ public fun get_all_balances(
     let mut total = 0;
     let mut balances = vector::empty<PortfolioBalance>();
 
-    if (has_wallets(portfolio, owner)) {
-        let wallets = linked_table::borrow(&portfolio.wallets, owner);
+    if (portfolio.wallets.contains(owner)) {
+        let wallets = portfolio.wallets.borrow(owner);
         total = wallets.length();
         let limit_value = if (limit.is_some()) { *limit.borrow() } else { total };
         let mut option_key = &utils::linked_table_key_of(wallets, offset);
 
         while (option_key.is_some() && balances.length() < limit_value) {
             let account_name = *option_key.borrow();
-            let wallet = linked_table::borrow(wallets, account_name);
-            let balance = wallet::get_all_balances(wallet);
+            let wallet = wallets.borrow(account_name);
+            let balance = wallet.get_all_balances();
             balances.push_back(PortfolioBalance { account_name, balance });
             option_key = wallets.next(account_name);
         };
@@ -339,7 +334,7 @@ public fun get_balance<T>(
 ): CoinBalance {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet(portfolio, owner, account_name);
-        wallet::get_balance<T>(wallet)
+        wallet.get_balance<T>()
     } else {
         pocket::zero_balance<T>()
     }
@@ -365,7 +360,7 @@ public fun get_pool_balance<CoinTypeA, CoinTypeB>(
 ): (CoinBalance, CoinBalance) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet(portfolio, owner, account_name);
-        wallet::get_pool_balance<CoinTypeA, CoinTypeB>(wallet)
+        wallet.get_pool_balance<CoinTypeA, CoinTypeB>()
     } else {
         (pocket::zero_balance<CoinTypeA>(), pocket::zero_balance<CoinTypeB>())
     }
@@ -391,8 +386,8 @@ public fun get_accounts(
     limit: Option<u64>,
     offset: Option<u64>,
 ): (vector<String>, u64) {
-    if (has_wallets(portfolio, owner)) {
-        let wallets = linked_table::borrow(&portfolio.wallets, owner);
+    if (portfolio.wallets.contains(owner)) {
+        let wallets = portfolio.wallets.borrow(owner);
         utils::linked_table_limit_keys(wallets, limit, offset)
     } else {
         (vector::empty<String>(), 0)

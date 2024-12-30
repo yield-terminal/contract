@@ -1,8 +1,8 @@
 /// Module: Self Cetus Portfolio
 module terminal::self_cetus_portfolio;
 
-use terminal::cetus_portfolio::{Self, CetusPortfolio};
+use terminal::cetus_portfolio::CetusPortfolio;
 
 public fun claim_all(portfolio: &mut CetusPortfolio, ctx: &TxContext) {
-    cetus_portfolio::claim_all(portfolio, ctx.sender());
+    portfolio.claim_all(ctx.sender());
 }

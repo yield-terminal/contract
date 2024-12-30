@@ -4,7 +4,7 @@ module terminal::admin_portfolio;
 use std::ascii::String;
 use sui::coin::{Self, Coin};
 use terminal::config::AdminCap;
-use terminal::portfolio::{Self, Portfolio};
+use terminal::portfolio::Portfolio;
 
 public fun deposit<T>(
     _adminCap: &AdminCap,
@@ -14,7 +14,7 @@ public fun deposit<T>(
     coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio::deposit<T>(portfolio, owner, account_name, coin::into_balance(coin), ctx);
+    portfolio.deposit<T>(owner, account_name, coin::into_balance(coin), ctx);
 }
 
 public fun deposit_fee<T>(
@@ -25,7 +25,7 @@ public fun deposit_fee<T>(
     coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio::deposit_fee<T>(portfolio, owner, account_name, coin::into_balance(coin), ctx);
+    portfolio.deposit_fee<T>(owner, account_name, coin::into_balance(coin), ctx);
 }
 
 public fun deposit_reward<T>(
@@ -36,7 +36,7 @@ public fun deposit_reward<T>(
     coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio::deposit_reward<T>(portfolio, owner, account_name, coin::into_balance(coin), ctx);
+    portfolio.deposit_reward<T>(owner, account_name, coin::into_balance(coin), ctx);
 }
 
 public fun apply_fee<T>(
@@ -45,7 +45,7 @@ public fun apply_fee<T>(
     owner: address,
     account_name: String,
 ) {
-    portfolio::apply_fee<T>(portfolio, owner, account_name);
+    portfolio.apply_fee<T>(owner, account_name);
 }
 
 public fun apply_reward<T>(
@@ -54,7 +54,7 @@ public fun apply_reward<T>(
     owner: address,
     account_name: String,
 ) {
-    portfolio::apply_reward<T>(portfolio, owner, account_name);
+    portfolio.apply_reward<T>(owner, account_name);
 }
 
 public fun claim<T>(
@@ -64,7 +64,7 @@ public fun claim<T>(
     account_name: String,
     ctx: &mut TxContext,
 ) {
-    portfolio::claim<T>(portfolio, owner, account_name, ctx);
+    portfolio.claim<T>(owner, account_name, ctx);
 }
 
 public fun claim_fee<T>(
@@ -74,7 +74,7 @@ public fun claim_fee<T>(
     account_name: String,
     ctx: &mut TxContext,
 ) {
-    portfolio::claim_fee<T>(portfolio, owner, account_name, ctx);
+    portfolio.claim_fee<T>(owner, account_name, ctx);
 }
 
 public fun claim_reward<T>(
@@ -84,7 +84,7 @@ public fun claim_reward<T>(
     account_name: String,
     ctx: &mut TxContext,
 ) {
-    portfolio::claim_reward<T>(portfolio, owner, account_name, ctx);
+    portfolio.claim_reward<T>(owner, account_name, ctx);
 }
 
 public fun claim_all<T>(
@@ -93,7 +93,7 @@ public fun claim_all<T>(
     owner: address,
     ctx: &mut TxContext,
 ) {
-    portfolio::claim_all<T>(portfolio, owner, ctx);
+    portfolio.claim_all<T>(owner, ctx);
 }
 
 public fun claim_all_fee<T>(
@@ -102,7 +102,7 @@ public fun claim_all_fee<T>(
     owner: address,
     ctx: &mut TxContext,
 ) {
-    portfolio::claim_all_fee<T>(portfolio, owner, ctx);
+    portfolio.claim_all_fee<T>(owner, ctx);
 }
 
 public fun claim_all_reward<T>(
@@ -111,5 +111,5 @@ public fun claim_all_reward<T>(
     owner: address,
     ctx: &mut TxContext,
 ) {
-    portfolio::claim_all_reward<T>(portfolio, owner, ctx);
+    portfolio.claim_all_reward<T>(owner, ctx);
 }

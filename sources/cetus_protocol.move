@@ -3,15 +3,14 @@ module terminal::cetus_protocol;
 
 use cetus_clmm::config::GlobalConfig;
 use cetus_clmm::pool::{Self, Pool, AddLiquidityReceipt};
-use cetus_clmm::position;
 use cetus_clmm::rewarder::RewarderGlobalVault;
 use std::ascii::String;
 use std::type_name::{Self, TypeName};
 use sui::balance;
 use sui::clock::Clock;
 use sui::event;
-use terminal::cetus_portfolio::{Self, CetusPortfolio};
-use terminal::portfolio::{Self, Portfolio};
+use terminal::cetus_portfolio::CetusPortfolio;
+use terminal::portfolio::Portfolio;
 
 public struct SwapResult has copy, drop, store {
     fee_amount: u64,
@@ -92,14 +91,12 @@ fun repay_add_liquidity<CoinTypeA, CoinTypeB>(
     receipt: AddLiquidityReceipt<CoinTypeA, CoinTypeB>,
 ): (u64, u64) {
     let (amount_a, amount_b) = pool::add_liquidity_pay_amount(&receipt);
-    let balance_a = portfolio::withdraw<CoinTypeA>(
-        portfolio,
+    let balance_a = portfolio.withdraw<CoinTypeA>(
         owner,
         account_name,
         option::some(amount_a),
     );
-    let balance_b = portfolio::withdraw<CoinTypeB>(
-        portfolio,
+    let balance_b = portfolio.withdraw<CoinTypeB>(
         owner,
         account_name,
         option::some(amount_b),
@@ -120,8 +117,7 @@ public(package) fun add_liquidity<CoinTypeA, CoinTypeB>(
     liquidity: u128,
     clock: &Clock,
 ) {
-    let position = cetus_portfolio::borrow_position_mut(
-        cetus_portfolio,
+    let position = cetus_portfolio.borrow_position_mut(
         owner,
         account_name,
         position_id,
@@ -164,8 +160,7 @@ public(package) fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
     fix_amount_a: bool,
     clock: &Clock,
 ) {
-    let position = cetus_portfolio::borrow_position_mut(
-        cetus_portfolio,
+    let position = cetus_portfolio.borrow_position_mut(
         owner,
         account_name,
         position_id,
@@ -233,7 +228,7 @@ public(package) fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
         receipt,
     );
     let position_id = object::id(&position);
-    cetus_portfolio::deposit_position(cetus_portfolio, owner, account_name, position, ctx);
+    cetus_portfolio.deposit_position(owner, account_name, position, ctx);
 
     event::emit(OpenPositionEvent {
         owner,
@@ -283,7 +278,7 @@ public(package) fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
         receipt,
     );
     let position_id = object::id(&position);
-    cetus_portfolio::deposit_position(cetus_portfolio, owner, account_name, position, ctx);
+    cetus_portfolio.deposit_position(owner, account_name, position, ctx);
 
     event::emit(OpenPositionEvent {
         owner,
@@ -306,13 +301,12 @@ public(package) fun close_position<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    let mut position = cetus_portfolio::withdraw_position(
-        cetus_portfolio,
+    let mut position = cetus_portfolio.withdraw_position(
         owner,
         account_name,
         position_id,
     );
-    let liquidity = position::liquidity(&position);
+    let liquidity = position.liquidity();
     let mut amount_a = 0;
     let mut amount_b = 0;
     if (liquidity > 0) {
@@ -325,8 +319,8 @@ public(package) fun close_position<CoinTypeA, CoinTypeB>(
         );
         amount_a = balance_a.value();
         amount_b = balance_b.value();
-        portfolio::deposit<CoinTypeA>(portfolio, owner, account_name, balance_a, ctx);
-        portfolio::deposit<CoinTypeB>(portfolio, owner, account_name, balance_b, ctx);
+        portfolio.deposit<CoinTypeA>(owner, account_name, balance_a, ctx);
+        portfolio.deposit<CoinTypeB>(owner, account_name, balance_b, ctx);
     };
     pool::close_position<CoinTypeA, CoinTypeB>(config, pool, position);
 
@@ -352,8 +346,7 @@ public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    let position = cetus_portfolio::borrow_position_mut(
-        cetus_portfolio,
+    let position = cetus_portfolio.borrow_position_mut(
         owner,
         account_name,
         position_id,
@@ -367,8 +360,8 @@ public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
     );
     let amount_a = balance_a.value();
     let amount_b = balance_b.value();
-    portfolio::deposit<CoinTypeA>(portfolio, owner, account_name, balance_a, ctx);
-    portfolio::deposit<CoinTypeB>(portfolio, owner, account_name, balance_b, ctx);
+    portfolio.deposit<CoinTypeA>(owner, account_name, balance_a, ctx);
+    portfolio.deposit<CoinTypeB>(owner, account_name, balance_b, ctx);
 
     event::emit(RemoveLiquidityEvent {
         owner,
@@ -383,7 +376,7 @@ public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
 public(package) fun collect_fee<CoinTypeA, CoinTypeB>(
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
-    cetus_portfolio: &mut CetusPortfolio,
+    cetus_portfolio: &CetusPortfolio,
     pool: &mut Pool<CoinTypeA, CoinTypeB>,
     owner: address,
     account_name: String,
@@ -391,8 +384,7 @@ public(package) fun collect_fee<CoinTypeA, CoinTypeB>(
     recalculate: bool,
     ctx: &mut TxContext,
 ) {
-    let position = cetus_portfolio::borrow_position(
-        cetus_portfolio,
+    let position = cetus_portfolio.borrow_position(
         owner,
         account_name,
         position_id,
@@ -405,8 +397,8 @@ public(package) fun collect_fee<CoinTypeA, CoinTypeB>(
     );
     let amount_a = fee_a.value();
     let amount_b = fee_b.value();
-    portfolio::deposit_fee<CoinTypeA>(portfolio, owner, account_name, fee_a, ctx);
-    portfolio::deposit_fee<CoinTypeB>(portfolio, owner, account_name, fee_b, ctx);
+    portfolio.deposit_fee<CoinTypeA>(owner, account_name, fee_a, ctx);
+    portfolio.deposit_fee<CoinTypeB>(owner, account_name, fee_b, ctx);
 
     event::emit(CollectFeeEvent {
         owner,
@@ -422,7 +414,7 @@ public(package) fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
     config: &GlobalConfig,
     vault: &mut RewarderGlobalVault,
     portfolio: &mut Portfolio,
-    cetus_portfolio: &mut CetusPortfolio,
+    cetus_portfolio: &CetusPortfolio,
     pool: &mut Pool<CoinTypeA, CoinTypeB>,
     owner: address,
     account_name: String,
@@ -431,8 +423,7 @@ public(package) fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    let position = cetus_portfolio::borrow_position(
-        cetus_portfolio,
+    let position = cetus_portfolio.borrow_position(
         owner,
         account_name,
         position_id,
@@ -446,7 +437,7 @@ public(package) fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
         clock,
     );
     let amount = reward_balance.value();
-    portfolio::deposit_reward<CoinTypeC>(portfolio, owner, account_name, reward_balance, ctx);
+    portfolio.deposit_reward<CoinTypeC>(owner, account_name, reward_balance, ctx);
 
     event::emit(CollectRewardEvent {
         owner,
@@ -472,7 +463,7 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    let before_sqrt_price = pool::current_sqrt_price(pool);
+    let before_sqrt_price = pool.current_sqrt_price();
     // flash swap first
     let (receive_a, receive_b, flash_receipt) = pool::flash_swap<CoinTypeA, CoinTypeB>(
         config,
@@ -505,8 +496,7 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
     // pay for flash swap
     let (pay_coin_a, pay_coin_b) = if (a2b) {
         (
-            portfolio::withdraw<CoinTypeA>(
-                portfolio,
+            portfolio.withdraw<CoinTypeA>(
                 owner,
                 account_name,
                 option::some(amount_in),
@@ -516,8 +506,7 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
     } else {
         (
             balance::zero<CoinTypeA>(),
-            portfolio::withdraw<CoinTypeB>(
-                portfolio,
+            portfolio.withdraw<CoinTypeB>(
                 owner,
                 account_name,
                 option::some(amount_in),
@@ -525,15 +514,13 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
         )
     };
 
-    portfolio::deposit<CoinTypeB>(
-        portfolio,
+    portfolio.deposit<CoinTypeB>(
         owner,
         account_name,
         receive_b,
         ctx,
     );
-    portfolio::deposit<CoinTypeA>(
-        portfolio,
+    portfolio.deposit<CoinTypeA>(
         owner,
         account_name,
         receive_a,
