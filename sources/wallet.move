@@ -50,13 +50,13 @@ public fun withdraw_reward<T>(wallet: &mut Wallet, amount: Option<u64>): Balance
 
 public fun apply_fee<T>(wallet: &mut Wallet) {
     if (wallet.fee.contains<T>()) {
-        wallet.main.deposit<T>(wallet.fee.withdraw(option::none()));
+        wallet.main.deposit<T>(wallet.fee.withdraw_all<T>());
     };
 }
 
 public fun apply_reward<T>(wallet: &mut Wallet) {
     if (wallet.reward.contains<T>()) {
-        wallet.main.deposit<T>(wallet.reward.withdraw(option::none()));
+        wallet.main.deposit<T>(wallet.reward.withdraw_all<T>());
     };
 }
 

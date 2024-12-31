@@ -2,7 +2,7 @@
 module terminal::admin_portfolio;
 
 use std::ascii::String;
-use sui::coin::{Self, Coin};
+use sui::coin::Coin;
 use terminal::config::AdminCap;
 use terminal::portfolio::Portfolio;
 
@@ -14,7 +14,7 @@ public fun deposit<T>(
     coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio.deposit<T>(owner, account_name, coin::into_balance(coin), ctx);
+    portfolio.deposit<T>(owner, account_name, coin.into_balance(), ctx);
 }
 
 public fun deposit_fee<T>(
@@ -25,7 +25,7 @@ public fun deposit_fee<T>(
     coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio.deposit_fee<T>(owner, account_name, coin::into_balance(coin), ctx);
+    portfolio.deposit_fee<T>(owner, account_name, coin.into_balance(), ctx);
 }
 
 public fun deposit_reward<T>(
@@ -36,7 +36,7 @@ public fun deposit_reward<T>(
     coin: Coin<T>,
     ctx: &mut TxContext,
 ) {
-    portfolio.deposit_reward<T>(owner, account_name, coin::into_balance(coin), ctx);
+    portfolio.deposit_reward<T>(owner, account_name, coin.into_balance(), ctx);
 }
 
 public fun apply_fee<T>(
