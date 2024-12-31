@@ -20,7 +20,7 @@ fun init(ctx: &mut TxContext) {
     );
 }
 
-public fun transfer_admin(_rootCap: &RootCap, adminCap: AdminCap, recipient: address) {
+entry fun transfer_admin(_rootCap: &RootCap, adminCap: AdminCap, recipient: address) {
     transfer::transfer(
         adminCap,
         recipient,

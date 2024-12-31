@@ -38,12 +38,12 @@ public struct FetchPoolBalanceEvent has copy, drop, store {
     balance_b: CoinBalance,
 }
 
-public struct FetchOwnerEvent has copy, drop, store {
+public struct FetchOwnersEvent has copy, drop, store {
     owners: vector<address>,
     total: u64,
 }
 
-public struct FetchAccountEvent has copy, drop, store {
+public struct FetchAccountsEvent has copy, drop, store {
     owner: address,
     accounts: vector<String>,
     total: u64,
@@ -401,7 +401,7 @@ public fun fetch_accounts(
     offset: Option<u64>,
 ) {
     let (accounts, total) = get_accounts(portfolio, owner, limit, offset);
-    event::emit(FetchAccountEvent {
+    event::emit(FetchAccountsEvent {
         owner,
         accounts,
         total,
@@ -418,7 +418,7 @@ public fun get_owners(
 
 public fun fetch_owners(portfolio: &mut Portfolio, limit: Option<u64>, offset: Option<u64>) {
     let (owners, total) = get_owners(portfolio, limit, offset);
-    event::emit(FetchOwnerEvent {
+    event::emit(FetchOwnersEvent {
         owners,
         total,
     });

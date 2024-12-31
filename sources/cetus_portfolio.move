@@ -17,18 +17,18 @@ public struct CetusBalance has copy, drop, store {
     positions: vector<ID>,
 }
 
-public struct FetchCetusBalanceEvent has copy, drop, store {
+public struct FetchCetusBalancesEvent has copy, drop, store {
     owner: address,
     balances: vector<CetusBalance>,
     total: u64,
 }
 
-public struct FetchCetusOwnerEvent has copy, drop, store {
+public struct FetchCetusOwnersEvent has copy, drop, store {
     owners: vector<address>,
     total: u64,
 }
 
-public struct FetchCetusAccountEvent has copy, drop, store {
+public struct FetchCetusAccountsEvent has copy, drop, store {
     owner: address,
     accounts: vector<String>,
     total: u64,
@@ -188,7 +188,7 @@ public fun fetch_balances(
     offset: Option<u64>,
 ) {
     let (balances, total) = get_balances(portfolio, owner, limit, offset);
-    event::emit(FetchCetusBalanceEvent {
+    event::emit(FetchCetusBalancesEvent {
         owner,
         balances,
         total,
@@ -216,7 +216,7 @@ public fun fetch_accounts(
     offset: Option<u64>,
 ) {
     let (accounts, total) = get_accounts(portfolio, owner, limit, offset);
-    event::emit(FetchCetusAccountEvent {
+    event::emit(FetchCetusAccountsEvent {
         owner,
         accounts,
         total,
@@ -233,7 +233,7 @@ public fun get_owners(
 
 public fun fetch_owners(portfolio: &mut CetusPortfolio, limit: Option<u64>, offset: Option<u64>) {
     let (owners, total) = get_owners(portfolio, limit, offset);
-    event::emit(FetchCetusOwnerEvent {
+    event::emit(FetchCetusOwnersEvent {
         owners,
         total,
     });
