@@ -21,7 +21,9 @@ public struct SwapResult has copy, drop, store {
 public struct SwapEvent has copy, drop, store {
     owner: address,
     account_name: String,
-    pool: ID,
+    pool_id: ID,
+    coin_type_a: TypeName,
+    coin_type_b: TypeName,
     a2b: bool,
     amount_in: u64,
     amount_out: u64,
@@ -31,8 +33,8 @@ public struct SwapEvent has copy, drop, store {
 public struct CollectRewardEvent has copy, drop, store {
     owner: address,
     account_name: String,
-    pool: ID,
-    position: ID,
+    pool_id: ID,
+    position_id: ID,
     coin_type: TypeName,
     amount: u64,
 }
@@ -40,8 +42,10 @@ public struct CollectRewardEvent has copy, drop, store {
 public struct CollectFeeEvent has copy, drop, store {
     owner: address,
     account_name: String,
-    pool: ID,
-    position: ID,
+    pool_id: ID,
+    position_id: ID,
+    coin_type_a: TypeName,
+    coin_type_b: TypeName,
     amount_a: u64,
     amount_b: u64,
 }
@@ -49,8 +53,10 @@ public struct CollectFeeEvent has copy, drop, store {
 public struct RemoveLiquidityEvent has copy, drop, store {
     owner: address,
     account_name: String,
-    pool: ID,
-    position: ID,
+    pool_id: ID,
+    position_id: ID,
+    coin_type_a: TypeName,
+    coin_type_b: TypeName,
     amount_a: u64,
     amount_b: u64,
 }
@@ -58,8 +64,10 @@ public struct RemoveLiquidityEvent has copy, drop, store {
 public struct ClosePositionEvent has copy, drop, store {
     owner: address,
     account_name: String,
-    pool: ID,
-    position: ID,
+    pool_id: ID,
+    position_id: ID,
+    coin_type_a: TypeName,
+    coin_type_b: TypeName,
     amount_a: u64,
     amount_b: u64,
 }
@@ -67,8 +75,10 @@ public struct ClosePositionEvent has copy, drop, store {
 public struct OpenPositionEvent has copy, drop, store {
     owner: address,
     account_name: String,
-    pool: ID,
-    position: ID,
+    pool_id: ID,
+    position_id: ID,
+    coin_type_a: TypeName,
+    coin_type_b: TypeName,
     amount_a: u64,
     amount_b: u64,
 }
@@ -76,8 +86,10 @@ public struct OpenPositionEvent has copy, drop, store {
 public struct AddLiquidityEvent has copy, drop, store {
     owner: address,
     account_name: String,
-    pool: ID,
-    position: ID,
+    pool_id: ID,
+    position_id: ID,
+    coin_type_a: TypeName,
+    coin_type_b: TypeName,
     amount_a: u64,
     amount_b: u64,
 }
@@ -141,8 +153,10 @@ public(package) fun add_liquidity<CoinTypeA, CoinTypeB>(
     event::emit(AddLiquidityEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         amount_a,
         amount_b,
     });
@@ -185,8 +199,10 @@ public(package) fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
     event::emit(AddLiquidityEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         amount_a,
         amount_b,
     });
@@ -212,6 +228,7 @@ public(package) fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
         tick_upper,
         ctx,
     );
+    
     let receipt = pool::add_liquidity(
         config,
         pool,
@@ -233,8 +250,10 @@ public(package) fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
     event::emit(OpenPositionEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         amount_a,
         amount_b,
     });
@@ -283,8 +302,10 @@ public(package) fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
     event::emit(OpenPositionEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         amount_a,
         amount_b,
     });
@@ -327,8 +348,10 @@ public(package) fun close_position<CoinTypeA, CoinTypeB>(
     event::emit(ClosePositionEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         amount_a,
         amount_b,
     });
@@ -366,8 +389,10 @@ public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
     event::emit(RemoveLiquidityEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         amount_a,
         amount_b,
     });
@@ -403,8 +428,10 @@ public(package) fun collect_fee<CoinTypeA, CoinTypeB>(
     event::emit(CollectFeeEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         amount_a,
         amount_b,
     });
@@ -442,8 +469,8 @@ public(package) fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
     event::emit(CollectRewardEvent {
         owner,
         account_name,
-        pool: object::id(pool),
-        position: position_id,
+        pool_id: object::id(pool),
+        position_id,
         coin_type: type_name::get<CoinTypeC>(),
         amount,
     });
@@ -538,7 +565,9 @@ public(package) fun swap<CoinTypeA, CoinTypeB>(
     event::emit(SwapEvent {
         owner,
         account_name,
-        pool: object::id(pool),
+        pool_id: object::id(pool),
+        coin_type_a: type_name::get<CoinTypeA>(),
+        coin_type_b: type_name::get<CoinTypeB>(),
         a2b,
         amount_in,
         amount_out,

@@ -4,7 +4,6 @@ module terminal::pocket;
 use std::type_name::{Self, TypeName};
 use sui::bag::{Self, Bag};
 use sui::balance::{Self, Balance};
-use sui::coin;
 
 public struct Pocket has store {
     bag: Bag,
