@@ -62,6 +62,32 @@ public fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
     );
 }
 
+public fun add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
+    config: &GlobalConfig,
+    portfolio: &mut Portfolio,
+    cetus_portfolio: &mut CetusPortfolio,
+    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    account_name: String,
+    position_id: ID,
+    max_amount_a: Option<u64>,
+    max_amount_b: Option<u64>,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    cetus_protocol::add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
+        config,
+        portfolio,
+        cetus_portfolio,
+        pool,
+        ctx.sender(),
+        account_name,
+        position_id,
+        max_amount_a,
+        max_amount_b,
+        clock,
+    );
+}
+
 public fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
@@ -113,6 +139,35 @@ public fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
         tick_upper,
         amount,
         fix_amount_a,
+        clock,
+        ctx,
+    );
+}
+
+public fun open_position_by_max_amount<CoinTypeA, CoinTypeB>(
+    config: &GlobalConfig,
+    portfolio: &mut Portfolio,
+    cetus_portfolio: &mut CetusPortfolio,
+    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    account_name: String,
+    tick_lower: u32,
+    tick_upper: u32,
+    max_amount_a: Option<u64>,
+    max_amount_b: Option<u64>,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    cetus_protocol::open_position_by_max_amount<CoinTypeA, CoinTypeB>(
+        config,
+        portfolio,
+        cetus_portfolio,
+        pool,
+        ctx.sender(),
+        account_name,
+        tick_lower,
+        tick_upper,
+        max_amount_a,
+        max_amount_b,
         clock,
         ctx,
     );

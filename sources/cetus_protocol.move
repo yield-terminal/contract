@@ -132,26 +132,26 @@ fun calculate_liquidity<CoinTypeA, CoinTypeB>(
     amount_b: u64,
 ): u128 {
     let current_tick = pool.current_tick_index();
-    let curSqrtPrice = pool.current_sqrt_price();
+    let current_sqrt_price = pool.current_sqrt_price();
     let (lower_index, upper_index) = position.tick_range();
-    let lowerSqrtPrice = tick_math::get_sqrt_price_at_tick(lower_index);
-    let upperSqrtPrice = tick_math::get_sqrt_price_at_tick(upper_index);
+    let lower_sqrt_price = tick_math::get_sqrt_price_at_tick(lower_index);
+    let upper_sqrt_price = tick_math::get_sqrt_price_at_tick(upper_index);
 
     if (current_tick.lt(lower_index)) {
-        return clmm_math::get_liquidity_from_a(lowerSqrtPrice, upperSqrtPrice, amount_a, false)
+        return clmm_math::get_liquidity_from_a(lower_sqrt_price, upper_sqrt_price, amount_a, false)
     };
     if (current_tick.gte(upper_index)) {
-        return clmm_math::get_liquidity_from_a(upperSqrtPrice, lowerSqrtPrice, amount_b, false)
+        return clmm_math::get_liquidity_from_a(upper_sqrt_price, lower_sqrt_price, amount_b, false)
     };
     let liquidity_a = clmm_math::get_liquidity_from_a(
-        curSqrtPrice,
-        upperSqrtPrice,
+        current_sqrt_price,
+        upper_sqrt_price,
         amount_a,
         false,
     );
     let liquidity_b = clmm_math::get_liquidity_from_a(
-        curSqrtPrice,
-        lowerSqrtPrice,
+        current_sqrt_price,
+        lower_sqrt_price,
         amount_b,
         false,
     );
@@ -273,7 +273,7 @@ public(package) fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
     });
 }
 
-public(package) fun add_liquidity_max_amount<CoinTypeA, CoinTypeB>(
+public(package) fun add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
@@ -429,7 +429,7 @@ public(package) fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
     });
 }
 
-public(package) fun open_position_max_amount<CoinTypeA, CoinTypeB>(
+public(package) fun open_position_by_max_amount<CoinTypeA, CoinTypeB>(
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
