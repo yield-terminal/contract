@@ -132,6 +132,8 @@ public fun close_position<CoinTypeA, CoinTypeB>(
     owner: address,
     account_name: String,
     position_id: ID,
+    max_amount_a: Option<u64>,
+    max_amount_b: Option<u64>,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -143,6 +145,8 @@ public fun close_position<CoinTypeA, CoinTypeB>(
         owner,
         account_name,
         position_id,
+        max_amount_a,
+        max_amount_b,
         clock,
         ctx,
     );
@@ -158,6 +162,8 @@ public fun remove_liquidity<CoinTypeA, CoinTypeB>(
     account_name: String,
     position_id: ID,
     liquidity: u128,
+    max_amount_a: Option<u64>,
+    max_amount_b: Option<u64>,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -170,6 +176,8 @@ public fun remove_liquidity<CoinTypeA, CoinTypeB>(
         account_name,
         position_id,
         liquidity,
+        max_amount_a,
+        max_amount_b,
         clock,
         ctx,
     );

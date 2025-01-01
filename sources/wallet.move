@@ -102,3 +102,11 @@ public fun get_balance<T>(wallet: &Wallet): CoinBalance {
 public fun get_pool_balance<A, B>(wallet: &Wallet): (CoinBalance, CoinBalance) {
     wallet.main.get_pool_balance<A, B>()
 }
+
+public fun get_amount<T>(wallet: &Wallet): u64 {
+    wallet.main.get_amount<T>()
+}
+
+public fun get_pool_amounts<A, B>(wallet: &Wallet): (u64, u64) {
+    wallet.main.get_pool_amounts<A, B>()
+}

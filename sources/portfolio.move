@@ -366,6 +366,28 @@ public fun get_pool_balance<CoinTypeA, CoinTypeB>(
     }
 }
 
+public fun get_amount<T>(portfolio: &Portfolio, owner: address, account_name: String): u64 {
+    if (has_wallet(portfolio, owner, account_name)) {
+        let wallet = borrow_wallet(portfolio, owner, account_name);
+        wallet.get_amount<T>()
+    } else {
+        0
+    }
+}
+
+public fun get_pool_amounts<A, B>(
+    portfolio: &Portfolio,
+    owner: address,
+    account_name: String,
+): (u64, u64) {
+    if (has_wallet(portfolio, owner, account_name)) {
+        let wallet = borrow_wallet(portfolio, owner, account_name);
+        wallet.get_pool_amounts<A, B>()
+    } else {
+        (0, 0)
+    }
+}
+
 public fun fetch_pool_balance<A, B>(portfolio: &Portfolio, owner: address, account_name: String) {
     let (balance_a, balance_b) = get_pool_balance<A, B>(
         portfolio,
