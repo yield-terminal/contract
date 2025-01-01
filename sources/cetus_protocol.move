@@ -15,7 +15,7 @@ use sui::event;
 use terminal::cetus_portfolio::CetusPortfolio;
 use terminal::portfolio::Portfolio;
 
-const EOverMaxAmount: u64 = 0;
+const EMaxAmountOver: u64 = 0;
 const ELiquidityZero: u64 = 1;
 
 public struct SwapResult has copy, drop, store {
@@ -100,7 +100,7 @@ public struct AddLiquidityEvent has copy, drop, store {
     amount_b: u64,
 }
 
-fun get_portfolio_amounts<CoinTypeA, CoinTypeB>(
+fun get_free_amounts<CoinTypeA, CoinTypeB>(
     portfolio: &Portfolio,
     owner: address,
     account_name: String,
@@ -125,7 +125,7 @@ fun get_portfolio_amounts<CoinTypeA, CoinTypeB>(
     (amount_a, amount_b)
 }
 
-fun calculate_liquidity<CoinTypeA, CoinTypeB>(
+fun get_liquidity_from_amounts<CoinTypeA, CoinTypeB>(
     pool: &Pool<CoinTypeA, CoinTypeB>,
     position: &Position,
     amount_a: u64,
@@ -290,14 +290,14 @@ public(package) fun add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
         account_name,
         position_id,
     );
-    let (p_amount_a, p_amount_b) = get_portfolio_amounts<CoinTypeA, CoinTypeB>(
+    let (free_amount_a, free_amount_b) = get_free_amounts<CoinTypeA, CoinTypeB>(
         portfolio,
         owner,
         account_name,
         max_amount_a,
         max_amount_b,
     );
-    let liquidity = calculate_liquidity(pool, position, p_amount_a, p_amount_b);
+    let liquidity = get_liquidity_from_amounts(pool, position, free_amount_a, free_amount_b);
     assert!(liquidity > 0, ELiquidityZero);
     let receipt = pool::add_liquidity<CoinTypeA, CoinTypeB>(
         config,
@@ -450,14 +450,14 @@ public(package) fun open_position_by_max_amount<CoinTypeA, CoinTypeB>(
         tick_upper,
         ctx,
     );
-    let (p_amount_a, p_amount_b) = get_portfolio_amounts<CoinTypeA, CoinTypeB>(
+    let (free_amount_a, free_amount_b) = get_free_amounts<CoinTypeA, CoinTypeB>(
         portfolio,
         owner,
         account_name,
         max_amount_a,
         max_amount_b,
     );
-    let liquidity = calculate_liquidity(pool, &position, p_amount_a, p_amount_b);
+    let liquidity = get_liquidity_from_amounts(pool, &position, free_amount_a, free_amount_b);
     assert!(liquidity > 0, ELiquidityZero);
     let receipt = pool::add_liquidity<CoinTypeA, CoinTypeB>(
         config,
@@ -520,8 +520,8 @@ public(package) fun close_position<CoinTypeA, CoinTypeB>(
         );
         amount_a = balance_a.value();
         amount_b = balance_b.value();
-        assert!(max_amount_a.is_none() || amount_a <= *max_amount_a.borrow(), EOverMaxAmount);
-        assert!(max_amount_b.is_none() || amount_b <= *max_amount_b.borrow(), EOverMaxAmount);
+        assert!(max_amount_a.is_none() || amount_a <= *max_amount_a.borrow(), EMaxAmountOver);
+        assert!(max_amount_b.is_none() || amount_b <= *max_amount_b.borrow(), EMaxAmountOver);
         portfolio.deposit<CoinTypeA>(owner, account_name, balance_a, ctx);
         portfolio.deposit<CoinTypeB>(owner, account_name, balance_b, ctx);
     };
@@ -567,8 +567,8 @@ public(package) fun remove_liquidity<CoinTypeA, CoinTypeB>(
     );
     let amount_a = balance_a.value();
     let amount_b = balance_b.value();
-    assert!(max_amount_a.is_none() || amount_a <= *max_amount_a.borrow(), EOverMaxAmount);
-    assert!(max_amount_b.is_none() || amount_b <= *max_amount_b.borrow(), EOverMaxAmount);
+    assert!(max_amount_a.is_none() || amount_a <= *max_amount_a.borrow(), EMaxAmountOver);
+    assert!(max_amount_b.is_none() || amount_b <= *max_amount_b.borrow(), EMaxAmountOver);
     portfolio.deposit<CoinTypeA>(owner, account_name, balance_a, ctx);
     portfolio.deposit<CoinTypeB>(owner, account_name, balance_b, ctx);
 
