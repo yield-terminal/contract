@@ -15,8 +15,9 @@ use sui::event;
 use terminal::cetus_portfolio::CetusPortfolio;
 use terminal::portfolio::Portfolio;
 
-const EMaxAmountOver: u64 = 0;
-const ELiquidityZero: u64 = 1;
+const EMinAmountLess: u64 = 0;
+const EMaxAmountOver: u64 = 1;
+const ELiquidityZero: u64 = 2;
 
 public struct SwapResult has copy, drop, store {
     fee_amount: u64,
@@ -497,6 +498,8 @@ public(package) fun close_position<A, B>(
     owner: address,
     account_name: String,
     position_id: ID,
+    min_amount_a: Option<u64>,
+    min_amount_b: Option<u64>,
     max_amount_a: Option<u64>,
     max_amount_b: Option<u64>,
     clock: &Clock,
@@ -520,6 +523,8 @@ public(package) fun close_position<A, B>(
         );
         amount_a = balance_a.value();
         amount_b = balance_b.value();
+        assert!(min_amount_a.is_none() || amount_a >= *min_amount_a.borrow(), EMinAmountLess);
+        assert!(min_amount_b.is_none() || amount_b >= *min_amount_b.borrow(), EMinAmountLess);
         assert!(max_amount_a.is_none() || amount_a <= *max_amount_a.borrow(), EMaxAmountOver);
         assert!(max_amount_b.is_none() || amount_b <= *max_amount_b.borrow(), EMaxAmountOver);
         portfolio.deposit<A>(owner, account_name, balance_a, ctx);
@@ -548,6 +553,8 @@ public(package) fun remove_liquidity<A, B>(
     account_name: String,
     position_id: ID,
     liquidity: u128,
+    min_amount_a: Option<u64>,
+    min_amount_b: Option<u64>,
     max_amount_a: Option<u64>,
     max_amount_b: Option<u64>,
     clock: &Clock,
@@ -567,6 +574,8 @@ public(package) fun remove_liquidity<A, B>(
     );
     let amount_a = balance_a.value();
     let amount_b = balance_b.value();
+    assert!(min_amount_a.is_none() || amount_a >= *min_amount_a.borrow(), EMinAmountLess);
+    assert!(min_amount_b.is_none() || amount_b >= *min_amount_b.borrow(), EMinAmountLess);
     assert!(max_amount_a.is_none() || amount_a <= *max_amount_a.borrow(), EMaxAmountOver);
     assert!(max_amount_b.is_none() || amount_b <= *max_amount_b.borrow(), EMaxAmountOver);
     portfolio.deposit<A>(owner, account_name, balance_a, ctx);
