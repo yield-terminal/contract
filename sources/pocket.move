@@ -130,9 +130,9 @@ public fun get_pool_amounts<A, B>(pocket: &Pocket): (u64, u64) {
     (get_amount<A>(pocket), get_amount<B>(pocket))
 }
 
-public fun transfer<T>(pocket: &mut Pocket, recipient: address, ctx: &mut TxContext) {
+public fun claim<T>(pocket: &mut Pocket, owner: address, ctx: &mut TxContext) {
     if (contains<T>(pocket)) {
         let balance: Balance<T> = pocket.withdraw_all<T>();
-        transfer::public_transfer(balance.into_coin(ctx), recipient);
+        transfer::public_transfer(balance.into_coin(ctx), owner);
     }
 }

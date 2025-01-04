@@ -60,16 +60,16 @@ public fun apply_reward<T>(wallet: &mut Wallet) {
     };
 }
 
-public fun transfer<T>(wallet: &mut Wallet, recipient: address, ctx: &mut TxContext) {
-    wallet.main.transfer<T>(recipient, ctx);
+public fun claim<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
+    wallet.main.claim<T>(owner, ctx);
 }
 
-public fun transfer_fee<T>(wallet: &mut Wallet, recipient: address, ctx: &mut TxContext) {
-    wallet.fee.transfer<T>(recipient, ctx);
+public fun claim_fee<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
+    wallet.fee.claim<T>(owner, ctx);
 }
 
-public fun transfer_reward<T>(wallet: &mut Wallet, recipient: address, ctx: &mut TxContext) {
-    wallet.reward.transfer<T>(recipient, ctx);
+public fun claim_reward<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
+    wallet.reward.claim<T>(owner, ctx);
 }
 
 public fun is_empty(wallet: &Wallet): bool {

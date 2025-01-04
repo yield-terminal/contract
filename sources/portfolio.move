@@ -211,7 +211,7 @@ public(package) fun claim<T>(
 ) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet.transfer<T>(owner, ctx);
+        wallet.claim<T>(owner, ctx);
     }
 }
 
@@ -223,7 +223,7 @@ public(package) fun claim_fee<T>(
 ) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet.transfer_fee<T>(owner, ctx);
+        wallet.claim_fee<T>(owner, ctx);
     }
 }
 
@@ -235,7 +235,7 @@ public(package) fun claim_reward<T>(
 ) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet_mut(portfolio, owner, account_name);
-        wallet.transfer_reward<T>(owner, ctx);
+        wallet.claim_reward<T>(owner, ctx);
     }
 }
 
@@ -246,7 +246,7 @@ public(package) fun claim_all<T>(portfolio: &mut Portfolio, owner: address, ctx:
 
         while (option_key.is_some()) {
             let account_name = *option_key.borrow();
-            wallets.borrow_mut(account_name).transfer<T>(owner, ctx);
+            wallets.borrow_mut(account_name).claim<T>(owner, ctx);
             option_key = wallets.next(account_name);
         };
     }
@@ -263,7 +263,7 @@ public(package) fun claim_all_fee<T>(
 
         while (option_key.is_some()) {
             let account_name = *option_key.borrow();
-            wallets.borrow_mut(account_name).transfer_fee<T>(owner, ctx);
+            wallets.borrow_mut(account_name).claim_fee<T>(owner, ctx);
             option_key = wallets.next(account_name);
         };
     }
@@ -280,7 +280,7 @@ public(package) fun claim_all_reward<T>(
 
         while (option_key.is_some()) {
             let account_name = *option_key.borrow();
-            wallets.borrow_mut(account_name).transfer_reward<T>(owner, ctx);
+            wallets.borrow_mut(account_name).claim_reward<T>(owner, ctx);
             option_key = wallets.next(account_name);
         };
     }
@@ -353,16 +353,16 @@ public fun fetch_balance<T>(portfolio: &Portfolio, owner: address, account_name:
     });
 }
 
-public fun get_pool_balance<CoinTypeA, CoinTypeB>(
+public fun get_pool_balance<A, B>(
     portfolio: &Portfolio,
     owner: address,
     account_name: String,
 ): (CoinBalance, CoinBalance) {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet(portfolio, owner, account_name);
-        wallet.get_pool_balance<CoinTypeA, CoinTypeB>()
+        wallet.get_pool_balance<A, B>()
     } else {
-        (pocket::zero_balance<CoinTypeA>(), pocket::zero_balance<CoinTypeB>())
+        (pocket::zero_balance<A>(), pocket::zero_balance<B>())
     }
 }
 

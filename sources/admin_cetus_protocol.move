@@ -11,19 +11,19 @@ use terminal::cetus_protocol;
 use terminal::config::AdminCap;
 use terminal::portfolio::Portfolio;
 
-public fun add_liquidity<CoinTypeA, CoinTypeB>(
+public fun add_liquidity<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     position_id: ID,
     liquidity: u128,
     clock: &Clock,
 ) {
-    cetus_protocol::add_liquidity<CoinTypeA, CoinTypeB>(
+    cetus_protocol::add_liquidity<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -36,12 +36,12 @@ public fun add_liquidity<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
+public fun add_liquidity_fix_coin<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     position_id: ID,
@@ -49,7 +49,7 @@ public fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
     fix_amount_a: bool,
     clock: &Clock,
 ) {
-    cetus_protocol::add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
+    cetus_protocol::add_liquidity_fix_coin<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -63,12 +63,12 @@ public fun add_liquidity_fix_coin<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
+public fun add_liquidity_by_max_amount<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     position_id: ID,
@@ -76,7 +76,7 @@ public fun add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
     max_amount_b: Option<u64>,
     clock: &Clock,
 ) {
-    cetus_protocol::add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
+    cetus_protocol::add_liquidity_by_max_amount<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -90,12 +90,12 @@ public fun add_liquidity_by_max_amount<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
+public fun open_position_with_liquidity<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     tick_lower: u32,
@@ -104,7 +104,7 @@ public fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::open_position_with_liquidity<CoinTypeA, CoinTypeB>(
+    cetus_protocol::open_position_with_liquidity<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -119,12 +119,12 @@ public fun open_position_with_liquidity<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
+public fun open_position_fix_coin<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     tick_lower: u32,
@@ -134,7 +134,7 @@ public fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::open_position_fix_coin<CoinTypeA, CoinTypeB>(
+    cetus_protocol::open_position_fix_coin<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -150,12 +150,12 @@ public fun open_position_fix_coin<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun open_position_by_max_amount<CoinTypeA, CoinTypeB>(
+public fun open_position_by_max_amount<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     tick_lower: u32,
@@ -165,7 +165,7 @@ public fun open_position_by_max_amount<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::open_position_by_max_amount<CoinTypeA, CoinTypeB>(
+    cetus_protocol::open_position_by_max_amount<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -181,12 +181,12 @@ public fun open_position_by_max_amount<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun close_position<CoinTypeA, CoinTypeB>(
+public fun close_position<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     position_id: ID,
@@ -195,7 +195,7 @@ public fun close_position<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::close_position<CoinTypeA, CoinTypeB>(
+    cetus_protocol::close_position<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -210,12 +210,12 @@ public fun close_position<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun remove_liquidity<CoinTypeA, CoinTypeB>(
+public fun remove_liquidity<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     position_id: ID,
@@ -225,7 +225,7 @@ public fun remove_liquidity<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::remove_liquidity<CoinTypeA, CoinTypeB>(
+    cetus_protocol::remove_liquidity<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -241,19 +241,19 @@ public fun remove_liquidity<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun collect_fee<CoinTypeA, CoinTypeB>(
+public fun collect_fee<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     position_id: ID,
     recalculate: bool,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::collect_fee<CoinTypeA, CoinTypeB>(
+    cetus_protocol::collect_fee<A, B>(
         config,
         portfolio,
         cetus_portfolio,
@@ -266,13 +266,13 @@ public fun collect_fee<CoinTypeA, CoinTypeB>(
     );
 }
 
-public fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
+public fun collect_reward<A, B, C>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
     vault: &mut RewarderGlobalVault,
     portfolio: &mut Portfolio,
     cetus_portfolio: &mut CetusPortfolio,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     owner: address,
     account_name: String,
     position_id: ID,
@@ -280,7 +280,7 @@ public fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
+    cetus_protocol::collect_reward<A, B, C>(
         config,
         vault,
         portfolio,
@@ -295,10 +295,10 @@ public fun collect_reward<CoinTypeA, CoinTypeB, CoinTypeC>(
     );
 }
 
-public fun swap<CoinTypeA, CoinTypeB>(
+public fun swap<A, B>(
     _adminCap: &AdminCap,
     config: &GlobalConfig,
-    pool: &mut Pool<CoinTypeA, CoinTypeB>,
+    pool: &mut Pool<A, B>,
     portfolio: &mut Portfolio,
     owner: address,
     account_name: String,
@@ -310,7 +310,7 @@ public fun swap<CoinTypeA, CoinTypeB>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
-    cetus_protocol::swap<CoinTypeA, CoinTypeB>(
+    cetus_protocol::swap<A, B>(
         config,
         pool,
         portfolio,
