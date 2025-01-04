@@ -117,8 +117,12 @@ public(package) fun deposit<T>(
     balance: Balance<T>,
     ctx: &mut TxContext,
 ) {
-    let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
-    wallet.deposit(balance);
+    if (balance.value() > 0) {
+        let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
+        wallet.deposit(balance);
+    } else {
+        balance.destroy_zero();
+    };
 }
 
 public(package) fun deposit_fee<T>(
@@ -128,8 +132,12 @@ public(package) fun deposit_fee<T>(
     balance: Balance<T>,
     ctx: &mut TxContext,
 ) {
-    let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
-    wallet.deposit_fee(balance);
+    if (balance.value() > 0) {
+        let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
+        wallet.deposit_fee(balance);
+    } else {
+        balance.destroy_zero();
+    };
 }
 
 public(package) fun deposit_reward<T>(
@@ -139,8 +147,12 @@ public(package) fun deposit_reward<T>(
     balance: Balance<T>,
     ctx: &mut TxContext,
 ) {
-    let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
-    wallet.deposit_reward(balance);
+    if (balance.value() > 0) {
+        let wallet = borrow_or_new_wallet_mut(portfolio, owner, account_name, ctx);
+        wallet.deposit_reward(balance);
+    } else {
+        balance.destroy_zero();
+    };
 }
 
 public(package) fun withdraw<T>(
@@ -284,6 +296,32 @@ public(package) fun claim_all_reward<T>(
             option_key = wallets.next(account_name);
         };
     }
+}
+
+public(package) fun transfer<T>(
+    portfolio: &mut Portfolio,
+    owner: address,
+    account_from: String,
+    account_to: String,
+    amount: Option<u64>,
+    ctx: &mut TxContext,
+) {
+    let balance = portfolio.withdraw<T>(owner, account_from, amount);
+    portfolio.deposit<T>(owner, account_to, balance, ctx);
+}
+
+public(package) fun transfer_all<T>(
+    portfolio: &mut Portfolio,
+    owner: address,
+    account_from: String,
+    account_to: String,
+    ctx: &mut TxContext,
+) {
+    portfolio.transfer<T>(owner, account_from, account_to, option::none(), ctx);
+    let balance_fee = portfolio.withdraw_fee<T>(owner, account_from, option::none());
+    portfolio.deposit_fee<T>(owner, account_to, balance_fee, ctx);
+    let balance_reward = portfolio.withdraw_reward<T>(owner, account_from, option::none());
+    portfolio.deposit_reward<T>(owner, account_to, balance_reward, ctx);
 }
 
 public fun get_all_balances(

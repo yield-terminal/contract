@@ -22,6 +22,25 @@ public fun apply_reward<T>(portfolio: &mut Portfolio, account_name: String, ctx:
     portfolio.apply_reward<T>(ctx.sender(), account_name);
 }
 
+public fun transfer<T>(
+    portfolio: &mut Portfolio,
+    account_from: String,
+    account_to: String,
+    amount: Option<u64>,
+    ctx: &mut TxContext,
+) {
+    portfolio.transfer<T>(ctx.sender(), account_from, account_to, amount, ctx);
+}
+
+public fun transfer_all<T>(
+    portfolio: &mut Portfolio,
+    account_from: String,
+    account_to: String,
+    ctx: &mut TxContext,
+) {
+    portfolio.transfer_all<T>(ctx.sender(), account_from, account_to, ctx);
+}
+
 public fun claim<T>(portfolio: &mut Portfolio, account_name: String, ctx: &mut TxContext) {
     portfolio.claim<T>(ctx.sender(), account_name, ctx);
 }

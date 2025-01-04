@@ -57,6 +57,29 @@ public fun apply_reward<T>(
     portfolio.apply_reward<T>(owner, account_name);
 }
 
+public fun transfer<T>(
+    _adminCap: &AdminCap,
+    portfolio: &mut Portfolio,
+    owner: address,
+    account_from: String,
+    account_to: String,
+    amount: Option<u64>,
+    ctx: &mut TxContext,
+) {
+    portfolio.transfer<T>(owner, account_from, account_to, amount, ctx);
+}
+
+public fun transfer_all<T>(
+    _adminCap: &AdminCap,
+    portfolio: &mut Portfolio,
+    owner: address,
+    account_from: String,
+    account_to: String,
+    ctx: &mut TxContext,
+) {
+    portfolio.transfer_all<T>(owner, account_from, account_to, ctx);
+}
+
 public fun claim<T>(
     _adminCap: &AdminCap,
     portfolio: &mut Portfolio,
