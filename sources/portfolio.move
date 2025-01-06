@@ -327,9 +327,9 @@ public(package) fun transfer_all<T>(
 public fun get_all_balances(
     portfolio: &Portfolio,
     owner: address,
-    account_option: Option<String>,
     limit: Option<u64>,
     offset: Option<u64>,
+    account_option: Option<String>,
 ): (vector<PortfolioBalance>, u64) {
     let mut total = 0;
     let mut balances = vector::empty<PortfolioBalance>();
@@ -342,7 +342,7 @@ public fun get_all_balances(
 
         while (option_key.is_some() && balances.length() < limit_value) {
             let account_name = *option_key.borrow();
-            if (account_option.is_none() || account_name == *account_option.borrow()) {
+            if (account_option.is_none() || account_name == account_option.borrow()) {
                 let wallet = wallets.borrow(account_name);
                 let balance = wallet.get_all_balances();
                 balances.push_back(PortfolioBalance { account_name, balance });
@@ -360,11 +360,11 @@ public fun get_all_balances(
 public fun fetch_all_balances(
     portfolio: &Portfolio,
     owner: address,
-    account_option: Option<String>,
     limit: Option<u64>,
     offset: Option<u64>,
+    account_option: Option<String>,
 ) {
-    let (balances, total) = get_all_balances(portfolio, owner, account_option, limit, offset);
+    let (balances, total) = get_all_balances(portfolio, owner, limit, offset, account_option);
     event::emit(FetchAllBalancesEvent {
         owner,
         balances,
