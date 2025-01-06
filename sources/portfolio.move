@@ -14,18 +14,13 @@ public struct Portfolio has key, store {
     wallets: LinkedTable<address, LinkedTable<String, Wallet>>,
 }
 
-public struct PortfolioBalance has copy, drop, store {
+public struct FetchWalletBalanceEvent has copy, drop, store {
+    owner: address,
     account_name: String,
     balance: WalletBalance,
 }
 
-public struct FetchAllBalancesEvent has copy, drop, store {
-    owner: address,
-    balances: vector<PortfolioBalance>,
-    total: u64,
-}
-
-public struct FetchBalanceEvent has copy, drop, store {
+public struct FetchCoinBalanceEvent has copy, drop, store {
     owner: address,
     account_name: String,
     balance: CoinBalance,
@@ -324,74 +319,48 @@ public(package) fun transfer_all<T>(
     portfolio.deposit_reward<T>(owner, account_to, balance_reward, ctx);
 }
 
-public fun get_all_balances(
+public fun get_wallet_balance(
     portfolio: &Portfolio,
     owner: address,
-    limit: Option<u64>,
-    offset: Option<u64>,
-    account_option: Option<String>,
-): (vector<PortfolioBalance>, u64) {
-    let mut total = 0;
-    let mut balances = vector::empty<PortfolioBalance>();
-
-    if (portfolio.wallets.contains(owner)) {
-        let wallets = portfolio.wallets.borrow(owner);
-        total = wallets.length();
-        let limit_value = if (limit.is_some()) { *limit.borrow() } else { total };
-        let mut option_key = &utils::linked_table_key_of(wallets, offset);
-
-        while (option_key.is_some() && balances.length() < limit_value) {
-            let account_name = *option_key.borrow();
-            if (account_option.is_none() || account_name == account_option.borrow()) {
-                let wallet = wallets.borrow(account_name);
-                let balance = wallet.get_all_balances();
-                balances.push_back(PortfolioBalance { account_name, balance });
-                if (account_option.is_some()) {
-                    break
-                };
-            };
-            option_key = wallets.next(account_name);
-        };
-    };
-
-    (balances, total)
+    account_name: String,
+): WalletBalance {
+    if (has_wallet(portfolio, owner, account_name)) {
+        let wallet = borrow_wallet(portfolio, owner, account_name);
+        wallet.get_balance()
+    } else {
+        wallet::zero_balance()
+    }
 }
 
-public fun fetch_all_balances(
-    portfolio: &Portfolio,
-    owner: address,
-    limit: Option<u64>,
-    offset: Option<u64>,
-    account_option: Option<String>,
-) {
-    let (balances, total) = get_all_balances(portfolio, owner, limit, offset, account_option);
-    event::emit(FetchAllBalancesEvent {
+public fun fetch_wallet_balance(portfolio: &Portfolio, owner: address, account_name: String) {
+    let balance = get_wallet_balance(portfolio, owner, account_name);
+    event::emit(FetchWalletBalanceEvent {
         owner,
-        balances,
-        total,
+        account_name,
+        balance,
     });
 }
 
-public fun get_balance<T>(
+public fun get_coin_balance<T>(
     portfolio: &Portfolio,
     owner: address,
     account_name: String,
 ): CoinBalance {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet(portfolio, owner, account_name);
-        wallet.get_balance<T>()
+        wallet.get_coin_balance<T>()
     } else {
         pocket::zero_balance<T>()
     }
 }
 
-public fun fetch_balance<T>(portfolio: &Portfolio, owner: address, account_name: String) {
-    let balance = get_balance<T>(
+public fun fetch_coin_balance<T>(portfolio: &Portfolio, owner: address, account_name: String) {
+    let balance = get_coin_balance<T>(
         portfolio,
         owner,
         account_name,
     );
-    event::emit(FetchBalanceEvent {
+    event::emit(FetchCoinBalanceEvent {
         owner,
         account_name,
         balance,
@@ -414,7 +383,7 @@ public fun get_pool_balance<A, B>(
 public fun get_amount<T>(portfolio: &Portfolio, owner: address, account_name: String): u64 {
     if (has_wallet(portfolio, owner, account_name)) {
         let wallet = borrow_wallet(portfolio, owner, account_name);
-        wallet.get_amount<T>()
+        wallet.get_coin_amount<T>()
     } else {
         0
     }

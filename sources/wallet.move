@@ -87,7 +87,7 @@ public fun destroy_empty(wallet: Wallet) {
     reward.destroy_empty();
 }
 
-public fun get_all_balances(wallet: &Wallet): WalletBalance {
+public fun get_balance(wallet: &Wallet): WalletBalance {
     WalletBalance {
         main: wallet.main.get_all_balances(),
         fee: wallet.fee.get_all_balances(),
@@ -95,7 +95,7 @@ public fun get_all_balances(wallet: &Wallet): WalletBalance {
     }
 }
 
-public fun get_balance<T>(wallet: &Wallet): CoinBalance {
+public fun get_coin_balance<T>(wallet: &Wallet): CoinBalance {
     wallet.main.get_balance<T>()
 }
 
@@ -103,10 +103,18 @@ public fun get_pool_balance<A, B>(wallet: &Wallet): (CoinBalance, CoinBalance) {
     wallet.main.get_pool_balance<A, B>()
 }
 
-public fun get_amount<T>(wallet: &Wallet): u64 {
+public fun get_coin_amount<T>(wallet: &Wallet): u64 {
     wallet.main.get_amount<T>()
 }
 
 public fun get_pool_amounts<A, B>(wallet: &Wallet): (u64, u64) {
     wallet.main.get_pool_amounts<A, B>()
+}
+
+public fun zero_balance(): WalletBalance {
+    WalletBalance {
+        main: vector::empty(),
+        fee: vector::empty(),
+        reward: vector::empty(),
+    }
 }
