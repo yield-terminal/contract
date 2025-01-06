@@ -14,7 +14,7 @@ public struct Portfolio has key, store {
     wallets: LinkedTable<address, LinkedTable<String, Wallet>>,
 }
 
-public struct FetchWalletBalanceEvent has copy, drop, store {
+public struct FetchAccountBalanceEvent has copy, drop, store {
     owner: address,
     account_name: String,
     balance: WalletBalance,
@@ -319,7 +319,7 @@ public(package) fun transfer_all<T>(
     portfolio.deposit_reward<T>(owner, account_to, balance_reward, ctx);
 }
 
-public fun get_wallet_balance(
+public fun get_account_balance(
     portfolio: &Portfolio,
     owner: address,
     account_name: String,
@@ -332,9 +332,9 @@ public fun get_wallet_balance(
     }
 }
 
-public fun fetch_wallet_balance(portfolio: &Portfolio, owner: address, account_name: String) {
-    let balance = get_wallet_balance(portfolio, owner, account_name);
-    event::emit(FetchWalletBalanceEvent {
+public fun fetch_account_balance(portfolio: &Portfolio, owner: address, account_name: String) {
+    let balance = get_account_balance(portfolio, owner, account_name);
+    event::emit(FetchAccountBalanceEvent {
         owner,
         account_name,
         balance,
