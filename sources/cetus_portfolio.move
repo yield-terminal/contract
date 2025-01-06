@@ -13,7 +13,7 @@ public struct CetusPortfolio has key {
     positions: LinkedTable<address, LinkedTable<String, LinkedTable<ID, Position>>>,
 }
 
-public struct PositionBalance has copy, drop, store {
+public struct CetusPositionInfo has copy, drop, store {
     id: ID,
     pool_id: ID,
     lower_tick: I32,
@@ -21,15 +21,10 @@ public struct PositionBalance has copy, drop, store {
     liquidity: u128,
 }
 
-public struct CetusBalance has copy, drop, store {
-    account_name: String,
-    positions: vector<PositionBalance>,
-}
-
-public struct FetchCetusBalancesEvent has copy, drop, store {
+public struct FetchCetusPositionsEvent has copy, drop, store {
     owner: address,
-    balances: vector<CetusBalance>,
-    total: u64,
+    account_name: String,
+    positions: vector<CetusPositionInfo>,
 }
 
 public struct FetchCetusOwnersEvent has copy, drop, store {
@@ -165,84 +160,57 @@ public(package) fun claim_all(portfolio: &mut CetusPortfolio, owner: address) {
     };
 }
 
-public fun get_balances(
+public fun get_positions(
     portfolio: &mut CetusPortfolio,
     owner: address,
-    limit: Option<u64>,
-    offset: Option<u64>,
-    account_option: Option<String>,
+    account_name: String,
     pool_option: Option<ID>,
-): (vector<CetusBalance>, u64) {
-    let own_positions = portfolio.positions.borrow_mut(owner);
-    let total = own_positions.length();
-    let mut balances = vector::empty<CetusBalance>();
-    let limit_value = if (limit.is_some()) { *limit.borrow() } else { total };
-    let mut account_key = &utils::linked_table_key_of(own_positions, offset);
+): vector<CetusPositionInfo> {
+    let mut positions = vector::empty<CetusPositionInfo>();
 
-    while (account_key.is_some() && balances.length() < limit_value) {
-        let account_name = *account_key.borrow();
-        if (account_option.is_none() || account_name == account_option.borrow()) {
-            let account_positions = own_positions.borrow(account_name);
-
-            let mut position_key = account_positions.front();
-            let mut positions = vector::empty<PositionBalance>();
-            while (position_key.is_some()) {
-                let pos_id = *position_key.borrow();
-                let position = account_positions.borrow(pos_id);
-                let pool_id = position.pool_id();
-                if (pool_option.is_none() || pool_option.borrow() == pool_id) {
-                    let (lower_tick, upper_tick) = position.tick_range();
-                    let liquidity = position.liquidity();
-                    positions.push_back(PositionBalance {
-                        id: pos_id,
-                        pool_id,
-                        lower_tick,
-                        upper_tick,
-                        liquidity,
-                    });
-                };
-
-                position_key = account_positions.next(pos_id);
-            };
-
-            if (positions.length() > 0) {
-                balances.push_back(CetusBalance {
-                    account_name,
-                    positions,
+    if (has_account_positions(portfolio, owner, account_name)) {
+        let own_positions = portfolio.positions.borrow(owner);
+        let account_positions = own_positions.borrow(account_name);
+        let mut position_key = account_positions.front();
+        while (position_key.is_some()) {
+            let pos_id = *position_key.borrow();
+            let position = account_positions.borrow(pos_id);
+            let pool_id = position.pool_id();
+            if (pool_option.is_none() || pool_option.borrow() == pool_id) {
+                let (lower_tick, upper_tick) = position.tick_range();
+                let liquidity = position.liquidity();
+                positions.push_back(CetusPositionInfo {
+                    id: pos_id,
+                    pool_id,
+                    lower_tick,
+                    upper_tick,
+                    liquidity,
                 });
             };
 
-            if (account_option.is_some()) {
-                break
-            };
+            position_key = account_positions.next(pos_id);
         };
-
-        account_key = own_positions.next(account_name);
     };
 
-    (balances, total)
+    positions
 }
 
-public fun fetch_balances(
+public fun fetch_positions(
     portfolio: &mut CetusPortfolio,
     owner: address,
-    limit: Option<u64>,
-    offset: Option<u64>,
-    account_option: Option<String>,
+    account_name: String,
     pool_option: Option<ID>,
 ) {
-    let (balances, total) = get_balances(
+    let positions = get_positions(
         portfolio,
         owner,
-        limit,
-        offset,
-        account_option,
+        account_name,
         pool_option,
     );
-    event::emit(FetchCetusBalancesEvent {
+    event::emit(FetchCetusPositionsEvent {
         owner,
-        balances,
-        total,
+        account_name,
+        positions,
     });
 }
 
