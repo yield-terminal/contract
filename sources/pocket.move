@@ -122,7 +122,7 @@ public fun get_amount<T>(pocket: &Pocket): u64 {
         let balance: &Balance<T> = pocket.bag.borrow(coin_type);
         balance.value()
     } else {
-       0
+        0
     }
 }
 
@@ -135,4 +135,29 @@ public fun claim<T>(pocket: &mut Pocket, owner: address, ctx: &mut TxContext) {
         let balance: Balance<T> = pocket.withdraw_all<T>();
         transfer::public_transfer(balance.into_coin(ctx), owner);
     }
+}
+
+public fun join_balances(balances1: vector<CoinBalance>, balances2: vector<CoinBalance>): vector<CoinBalance> {
+    let mut result = vector::empty<CoinBalance>();
+    let mut rest_list = vector::empty<CoinBalance>();
+    rest_list.append(balances2);
+    let mut i = 0;
+    while (i < balances1.length()) {
+        let item1 = balances1.borrow(i);
+        let index = balances2.find_index!(|x| x.coin_type == item1.coin_type);
+        if (index.is_some()) {
+            let j = *index.borrow();
+            let item2 = balances2.borrow(j);
+            result.push_back(CoinBalance {
+                coin_type: item1.coin_type,
+                value: item1.value + item2.value,
+            });
+            rest_list.remove(j);
+        } else {
+            result.push_back(*item1);
+        };
+        i = i + 1;
+    };
+    result.append(rest_list);
+    result
 }

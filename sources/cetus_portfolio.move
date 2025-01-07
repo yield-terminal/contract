@@ -286,9 +286,10 @@ public fun cleanup_all(portfolio: &mut CetusPortfolio) {
             account_key = own_positions.next(account_name);
         };
 
-        let i = 0;
+        let mut i = 0;
         while (i < account_remove_list.length()) {
             own_positions.remove(account_remove_list[i]).destroy_empty();
+            i = i + 1;
         };
 
         if (own_positions.is_empty()) {
@@ -298,8 +299,9 @@ public fun cleanup_all(portfolio: &mut CetusPortfolio) {
         owner_key = portfolio.positions.next(owner);
     };
 
-    let i = 0;
+    let mut i = 0;
     while (i < owner_remove_list.length()) {
         portfolio.positions.remove(owner_remove_list[i]).destroy_empty();
+        i = i + 1;
     };
 }

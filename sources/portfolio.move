@@ -44,6 +44,10 @@ public struct FetchAccountsEvent has copy, drop, store {
     total: u64,
 }
 
+public struct FetchAllBalancesEvent has copy, drop, store {
+    balances: vector<CoinBalance>,
+}
+
 fun init(ctx: &mut TxContext) {
     transfer::share_object(Portfolio {
         id: object::new(ctx),
@@ -488,9 +492,10 @@ public fun cleanup_all(portfolio: &mut Portfolio) {
             account_key = own_wallets.next(account_name);
         };
 
-        let i = 0;
+        let mut i = 0;
         while (i < account_remove_list.length()) {
             own_wallets.remove(account_remove_list[i]).destroy_empty();
+            i = i + 1;
         };
 
         if (own_wallets.is_empty()) {
@@ -500,8 +505,38 @@ public fun cleanup_all(portfolio: &mut Portfolio) {
         owner_key = portfolio.wallets.next(owner);
     };
 
-    let i = 0;
+    let mut i = 0;
     while (i < owner_remove_list.length()) {
         portfolio.wallets.remove(owner_remove_list[i]).destroy_empty();
+        i = i + 1;
     };
+}
+
+public fun get_all_balances(portfolio: &Portfolio): vector<CoinBalance> {
+    let mut result = vector::empty<CoinBalance>();
+    let mut owner_key = portfolio.wallets.front();
+
+    while (owner_key.is_some()) {
+        let owner = *owner_key.borrow();
+
+        let own_wallets = portfolio.wallets.borrow(owner);
+        let mut account_key = own_wallets.front();
+
+        while (account_key.is_some()) {
+            let account_name = *account_key.borrow();
+            let wallet = own_wallets.borrow(account_name);
+            result = pocket::join_balances(result, wallet.get_all_balances());
+            account_key = own_wallets.next(account_name);
+        };
+
+        owner_key = portfolio.wallets.next(owner);
+    };
+
+    result
+}
+
+public fun fetch_all_balances(portfolio: &Portfolio) {
+    event::emit(FetchAllBalancesEvent {
+        balances: portfolio.get_all_balances(),
+    });
 }

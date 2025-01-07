@@ -95,6 +95,13 @@ public fun get_balance(wallet: &Wallet): WalletBalance {
     }
 }
 
+public fun get_all_balances(wallet: &Wallet): vector<CoinBalance> {
+    let main = wallet.main.get_all_balances();
+    let fee = wallet.fee.get_all_balances();
+    let reward = wallet.reward.get_all_balances();
+    pocket::join_balances(main, pocket::join_balances(fee, reward))
+}
+
 public fun get_coin_balance<T>(wallet: &Wallet): CoinBalance {
     wallet.main.get_balance<T>()
 }
