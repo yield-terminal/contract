@@ -125,3 +125,11 @@ public fun zero_balance(): WalletBalance {
         reward: vector::empty(),
     }
 }
+
+public fun join_balances(balance1: WalletBalance, balance2: WalletBalance): WalletBalance {
+    WalletBalance {
+        main: pocket::join_balances(balance1.main, balance2.main),
+        fee: pocket::join_balances(balance1.fee, balance2.fee),
+        reward: pocket::join_balances(balance1.reward, balance2.reward),
+    }
+}

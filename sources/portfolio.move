@@ -44,8 +44,12 @@ public struct FetchAccountsEvent has copy, drop, store {
     total: u64,
 }
 
-public struct FetchAllBalancesEvent has copy, drop, store {
+public struct FetchTvlEvent has copy, drop, store {
     balances: vector<CoinBalance>,
+}
+
+public struct FetchAllBalanceEvent has copy, drop, store {
+    balance: WalletBalance,
 }
 
 fun init(ctx: &mut TxContext) {
@@ -512,7 +516,36 @@ public fun cleanup_all(portfolio: &mut Portfolio) {
     };
 }
 
-public fun get_all_balances(portfolio: &Portfolio): vector<CoinBalance> {
+public fun get_all_balance(portfolio: &Portfolio): WalletBalance {
+    let mut result = wallet::zero_balance();
+    let mut owner_key = portfolio.wallets.front();
+
+    while (owner_key.is_some()) {
+        let owner = *owner_key.borrow();
+
+        let own_wallets = portfolio.wallets.borrow(owner);
+        let mut account_key = own_wallets.front();
+
+        while (account_key.is_some()) {
+            let account_name = *account_key.borrow();
+            let wallet = own_wallets.borrow(account_name);
+            result = wallet::join_balances(result, wallet.get_balance());
+            account_key = own_wallets.next(account_name);
+        };
+
+        owner_key = portfolio.wallets.next(owner);
+    };
+
+    result
+}
+
+public fun fetch_all_balance(portfolio: &Portfolio) {
+    event::emit(FetchAllBalanceEvent {
+        balance: portfolio.get_all_balance(),
+    });
+}
+
+public fun get_tvl(portfolio: &Portfolio): vector<CoinBalance> {
     let mut result = vector::empty<CoinBalance>();
     let mut owner_key = portfolio.wallets.front();
 
@@ -535,8 +568,8 @@ public fun get_all_balances(portfolio: &Portfolio): vector<CoinBalance> {
     result
 }
 
-public fun fetch_all_balances(portfolio: &Portfolio) {
-    event::emit(FetchAllBalancesEvent {
-        balances: portfolio.get_all_balances(),
+public fun fetch_tvl(portfolio: &Portfolio) {
+    event::emit(FetchTvlEvent {
+        balances: portfolio.get_tvl(),
     });
 }
