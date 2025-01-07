@@ -266,3 +266,40 @@ public fun cleanup(portfolio: &mut CetusPortfolio, owner: address, account_name:
         }
     };
 }
+
+public fun cleanup_all(portfolio: &mut CetusPortfolio) {
+    let mut owner_key = portfolio.positions.front();
+    let mut owner_remove_list = vector::empty<address>();
+
+    while (owner_key.is_some()) {
+        let owner = *owner_key.borrow();
+
+        let own_positions = portfolio.positions.borrow_mut(owner);
+        let mut account_key = own_positions.front();
+        let mut account_remove_list = vector::empty<String>();
+
+        while (account_key.is_some()) {
+            let account_name = *account_key.borrow();
+            if (own_positions.borrow_mut(account_name).is_empty()) {
+                account_remove_list.push_back(account_name);
+            };
+            account_key = own_positions.next(account_name);
+        };
+
+        let i = 0;
+        while (i < account_remove_list.length()) {
+            own_positions.remove(account_remove_list[i]).destroy_empty();
+        };
+
+        if (own_positions.is_empty()) {
+            owner_remove_list.push_back(owner);
+        };
+
+        owner_key = portfolio.positions.next(owner);
+    };
+
+    let i = 0;
+    while (i < owner_remove_list.length()) {
+        portfolio.positions.remove(owner_remove_list[i]).destroy_empty();
+    };
+}

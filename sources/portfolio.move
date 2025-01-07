@@ -468,3 +468,40 @@ public fun cleanup(portfolio: &mut Portfolio, owner: address, account_name: Stri
         }
     };
 }
+
+public fun cleanup_all(portfolio: &mut Portfolio) {
+    let mut owner_key = portfolio.wallets.front();
+    let mut owner_remove_list = vector::empty<address>();
+
+    while (owner_key.is_some()) {
+        let owner = *owner_key.borrow();
+
+        let own_wallets = portfolio.wallets.borrow_mut(owner);
+        let mut account_key = own_wallets.front();
+        let mut account_remove_list = vector::empty<String>();
+
+        while (account_key.is_some()) {
+            let account_name = *account_key.borrow();
+            if (own_wallets.borrow_mut(account_name).is_empty()) {
+                account_remove_list.push_back(account_name);
+            };
+            account_key = own_wallets.next(account_name);
+        };
+
+        let i = 0;
+        while (i < account_remove_list.length()) {
+            own_wallets.remove(account_remove_list[i]).destroy_empty();
+        };
+
+        if (own_wallets.is_empty()) {
+            owner_remove_list.push_back(owner);
+        };
+
+        owner_key = portfolio.wallets.next(owner);
+    };
+
+    let i = 0;
+    while (i < owner_remove_list.length()) {
+        portfolio.wallets.remove(owner_remove_list[i]).destroy_empty();
+    };
+}
