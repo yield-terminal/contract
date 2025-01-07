@@ -38,6 +38,13 @@ public struct FetchCetusAccountsEvent has copy, drop, store {
     total: u64,
 }
 
+public struct FetchAllCetusPositionsEvent has copy, drop, store {
+    limit: Option<u64>,
+    offset: Option<u64>,
+    positions: vector<CetusPositionInfo>,
+    done: bool,
+}
+
 fun init(ctx: &mut TxContext) {
     transfer::share_object(CetusPortfolio {
         id: object::new(ctx),
@@ -304,4 +311,71 @@ public fun cleanup_all(portfolio: &mut CetusPortfolio) {
         portfolio.positions.remove(owner_remove_list[i]).destroy_empty();
         i = i + 1;
     };
+}
+
+public fun get_all_positions(
+    portfolio: &CetusPortfolio,
+    limit: Option<u64>,
+    offset: Option<u64>,
+): (vector<CetusPositionInfo>, bool) {
+    let mut skip = 0;
+    let mut positions = vector::empty<CetusPositionInfo>();
+    let mut owner_key = portfolio.positions.front();
+
+    while (owner_key.is_some()) {
+        let owner = *owner_key.borrow();
+
+        let own_positions = portfolio.positions.borrow(owner);
+        let mut account_key = own_positions.front();
+
+        while (account_key.is_some()) {
+            let account_name = *account_key.borrow();
+            let account_positions = own_positions.borrow(account_name);
+            let mut position_key = account_positions.front();
+            while (position_key.is_some()) {
+                let pos_id = *position_key.borrow();
+                if (offset.is_none() || skip >= *offset.borrow()) {
+                    let position = account_positions.borrow(pos_id);
+                    let pool_id = position.pool_id();
+                    let (lower_tick, upper_tick) = position.tick_range();
+                    let liquidity = position.liquidity();
+                    positions.push_back(CetusPositionInfo {
+                        id: pos_id,
+                        pool_id,
+                        lower_tick,
+                        upper_tick,
+                        liquidity,
+                    });
+
+                    if (limit.is_some() && positions.length() >= *limit.borrow()) {
+                        return (positions, false)
+                    };
+                } else {
+                    skip = skip + 1;
+                };
+
+                position_key = account_positions.next(pos_id);
+            };
+
+            account_key = own_positions.next(account_name);
+        };
+
+        owner_key = portfolio.positions.next(owner);
+    };
+
+    (positions, true)
+}
+
+public fun fetch_all_positions(
+    portfolio: &CetusPortfolio,
+    limit: Option<u64>,
+    offset: Option<u64>,
+) {
+    let (positions, done) = portfolio.get_all_positions(limit, offset);
+    event::emit(FetchAllCetusPositionsEvent {
+        limit,
+        offset,
+        positions,
+        done,
+    });
 }
