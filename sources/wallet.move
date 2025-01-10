@@ -16,7 +16,7 @@ public struct WalletBalance has copy, drop, store {
     reward: vector<CoinBalance>,
 }
 
-public fun new(ctx: &mut TxContext): Wallet {
+public(package) fun new(ctx: &mut TxContext): Wallet {
     Wallet {
         main: pocket::new(ctx),
         fee: pocket::new(ctx),
@@ -24,51 +24,51 @@ public fun new(ctx: &mut TxContext): Wallet {
     }
 }
 
-public fun deposit<T>(wallet: &mut Wallet, balance: Balance<T>) {
+public(package) fun deposit<T>(wallet: &mut Wallet, balance: Balance<T>) {
     wallet.main.deposit<T>(balance);
 }
 
-public fun deposit_fee<T>(wallet: &mut Wallet, balance: Balance<T>) {
+public(package) fun deposit_fee<T>(wallet: &mut Wallet, balance: Balance<T>) {
     wallet.fee.deposit<T>(balance);
 }
 
-public fun deposit_reward<T>(wallet: &mut Wallet, balance: Balance<T>) {
+public(package) fun deposit_reward<T>(wallet: &mut Wallet, balance: Balance<T>) {
     wallet.reward.deposit<T>(balance);
 }
 
-public fun withdraw<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
+public(package) fun withdraw<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
     wallet.main.withdraw<T>(amount)
 }
 
-public fun withdraw_fee<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
+public(package) fun withdraw_fee<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
     wallet.fee.withdraw<T>(amount)
 }
 
-public fun withdraw_reward<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
+public(package) fun withdraw_reward<T>(wallet: &mut Wallet, amount: Option<u64>): Balance<T> {
     wallet.reward.withdraw<T>(amount)
 }
 
-public fun apply_fee<T>(wallet: &mut Wallet) {
+public(package) fun apply_fee<T>(wallet: &mut Wallet) {
     if (wallet.fee.contains<T>()) {
         wallet.main.deposit<T>(wallet.fee.withdraw_all<T>());
     };
 }
 
-public fun apply_reward<T>(wallet: &mut Wallet) {
+public(package) fun apply_reward<T>(wallet: &mut Wallet) {
     if (wallet.reward.contains<T>()) {
         wallet.main.deposit<T>(wallet.reward.withdraw_all<T>());
     };
 }
 
-public fun claim<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
+public(package) fun claim<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
     wallet.main.claim<T>(owner, ctx);
 }
 
-public fun claim_fee<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
+public(package) fun claim_fee<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
     wallet.fee.claim<T>(owner, ctx);
 }
 
-public fun claim_reward<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
+public(package) fun claim_reward<T>(wallet: &mut Wallet, owner: address, ctx: &mut TxContext) {
     wallet.reward.claim<T>(owner, ctx);
 }
 
@@ -126,10 +126,10 @@ public fun zero_balance(): WalletBalance {
     }
 }
 
-public fun join_balances(balance1: WalletBalance, balance2: WalletBalance): WalletBalance {
+public fun join_balances(bal1: WalletBalance, bal2: WalletBalance): WalletBalance {
     WalletBalance {
-        main: pocket::join_balances(balance1.main, balance2.main),
-        fee: pocket::join_balances(balance1.fee, balance2.fee),
-        reward: pocket::join_balances(balance1.reward, balance2.reward),
+        main: pocket::join_balances(bal1.main, bal2.main),
+        fee: pocket::join_balances(bal1.fee, bal2.fee),
+        reward: pocket::join_balances(bal1.reward, bal2.reward),
     }
 }

@@ -15,14 +15,14 @@ public struct CoinBalance has copy, drop, store {
     value: u64,
 }
 
-public fun new(ctx: &mut TxContext): Pocket {
+public(package) fun new(ctx: &mut TxContext): Pocket {
     Pocket {
         bag: bag::new(ctx),
         balances: vector::empty<CoinBalance>(),
     }
 }
 
-public fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
+public(package) fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
     if (balance.value() > 0) {
         let coin_type = type_name::get<T>();
         let bag = &mut pocket.bag;
@@ -44,7 +44,7 @@ public fun deposit<T>(pocket: &mut Pocket, balance: Balance<T>) {
     }
 }
 
-public fun withdraw<T>(pocket: &mut Pocket, amount: Option<u64>): Balance<T> {
+public(package) fun withdraw<T>(pocket: &mut Pocket, amount: Option<u64>): Balance<T> {
     if (amount.is_some() && amount.borrow() == 0) return balance::zero<T>();
 
     let coin_type = type_name::get<T>();
@@ -65,12 +65,15 @@ public fun withdraw<T>(pocket: &mut Pocket, amount: Option<u64>): Balance<T> {
     }
 }
 
-public fun withdraw_all<T>(pocket: &mut Pocket): Balance<T> {
+public(package) fun withdraw_all<T>(pocket: &mut Pocket): Balance<T> {
     pocket.withdraw<T>(option::none())
 }
 
-public fun get_all_balances(pocket: &Pocket): vector<CoinBalance> {
-    pocket.balances
+public(package) fun claim<T>(pocket: &mut Pocket, owner: address, ctx: &mut TxContext) {
+    if (contains<T>(pocket)) {
+        let balance: Balance<T> = pocket.withdraw_all<T>();
+        transfer::public_transfer(balance.into_coin(ctx), owner);
+    }
 }
 
 public fun contains<T>(pocket: &Pocket): bool {
@@ -97,6 +100,10 @@ public fun zero_balance<T>(): CoinBalance {
         coin_type,
         value: 0,
     }
+}
+
+public fun get_all_balances(pocket: &Pocket): vector<CoinBalance> {
+    pocket.balances
 }
 
 public fun get_balance<T>(pocket: &Pocket): CoinBalance {
@@ -130,24 +137,17 @@ public fun get_pool_amounts<A, B>(pocket: &Pocket): (u64, u64) {
     (get_amount<A>(pocket), get_amount<B>(pocket))
 }
 
-public fun claim<T>(pocket: &mut Pocket, owner: address, ctx: &mut TxContext) {
-    if (contains<T>(pocket)) {
-        let balance: Balance<T> = pocket.withdraw_all<T>();
-        transfer::public_transfer(balance.into_coin(ctx), owner);
-    }
-}
-
-public fun join_balances(balances1: vector<CoinBalance>, balances2: vector<CoinBalance>): vector<CoinBalance> {
+public fun join_balances(bal1: vector<CoinBalance>, bal2: vector<CoinBalance>): vector<CoinBalance> {
     let mut result = vector::empty<CoinBalance>();
     let mut rest_list = vector::empty<CoinBalance>();
-    rest_list.append(balances2);
+    rest_list.append(bal2);
     let mut i = 0;
-    while (i < balances1.length()) {
-        let item1 = balances1.borrow(i);
-        let index = balances2.find_index!(|x| x.coin_type == item1.coin_type);
+    while (i < bal1.length()) {
+        let item1 = bal1.borrow(i);
+        let index = bal2.find_index!(|x| x.coin_type == item1.coin_type);
         if (index.is_some()) {
             let j = *index.borrow();
-            let item2 = balances2.borrow(j);
+            let item2 = bal2.borrow(j);
             result.push_back(CoinBalance {
                 coin_type: item1.coin_type,
                 value: item1.value + item2.value,
